@@ -1,5 +1,5 @@
 {
-  "name": "es-node",
+  "name": "evtstore",
   "version": "0.0.1",
   "description": "Event Sourcing with Node.JS",
   "main": "build/src/index.js",

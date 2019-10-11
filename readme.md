@@ -1,4 +1,4 @@
-# ES-Node
+# EvtStore
 
 > "Pretty Type Safe(tm)" Event Sourcing for Node.js with TypeScript
 
@@ -17,18 +17,18 @@ To obtain these goals the design is highly opinionated, but still flexible.
 ## Installation
 
 ```sh
-> yarn add es-node
+> yarn add evtstore
 # Or
-> npm i es-node
+> npm i evtstore
 ```
 
-`ES-Node` is typed with TypeScript and comes with two "providers":
+`evtstore` is typed with TypeScript and comes with two "providers":
 
-- `es-node/provider/memory`
+- `evtstore/provider/memory`
   - In memory provider for experimentation.
   - This can be initalised with an array of `StoredEvent[]`
 
-`es-node/provider/mongo`
+`evtstore/provider/mongo`
 
 - A MongoDB provider
 - The `mongodb` dependency is not included and must be installed prior to using it.
@@ -45,8 +45,8 @@ Some examples are available in the `test/` folder
 ## Sample
 
 ```ts
-import { createDomain } from 'es-node'
-import { createProvider } from 'es-node/provider/memory'
+import { createDomain } from 'evtstore'
+import { createProvider } from 'evtstore/provider/memory'
 
 type UserCreated = { type: 'UserCreated' }
 type NameChanged = { type: 'NameChanged'; name: string }
@@ -115,6 +115,11 @@ async function example() {
   await userDomain.command.changeName('my-user', { name: 'my name' })
 }
 ```
+
+## TODO
+
+- Logging
+- SQL provider
 
 ## License
 
