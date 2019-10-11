@@ -25,7 +25,7 @@ export function createDomain<
 >(
   opts: DomainOptions<Evt, Agg>,
   cmd: Command<Evt, Agg, Cmd>
-): Domain<Evt, Cmd> {
+): Domain<Evt, Agg, Cmd> {
   function handler(bookmark: string) {
     return new Handler({
       bookmark,
@@ -36,19 +36,19 @@ export function createDomain<
 
   return {
     handler,
-    command: wrapCmd(opts, cmd),
+    ...wrapCmd(opts, cmd),
   }
 }
 
 function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
   opts: DomainOptions<E, A>,
   cmd: Command<E, A, C>
-): CmdBody<C> {
+) {
   const keys = Object.keys(cmd) as Array<C['type']>
-  const wrapped: CmdBody<C> = {} as any
+  const command: CmdBody<C> = {} as any
   const cache = new Map<string, A & BaseAgg>()
 
-  async function getAgg(id: string) {
+  async function getAggregate(id: string) {
     {
       const agg = cache.get(id)
       if (agg) return agg
@@ -69,8 +69,8 @@ function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
   }
 
   for (const type of keys) {
-    wrapped[type] = async (id, body) => {
-      const agg = await getAgg(id)
+    command[type] = async (id, body) => {
+      const agg = await getAggregate(id)
       const result = await cmd[type]({ ...body, aggregateId: id }, agg)
 
       if (result) {
@@ -82,9 +82,7 @@ function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
         updateAgg(result, agg)
       }
     }
-
-    return wrapped
   }
 
-  return wrapped
+  return { command, getAggregate }
 }

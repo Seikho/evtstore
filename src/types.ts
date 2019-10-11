@@ -60,9 +60,10 @@ export type Command<E extends UserEvt, A extends UserAgg, C extends UserCmd> = {
   ) => Promise<(E) | void>
 }
 
-export type Domain<E extends UserEvt, C extends UserCmd> = {
+export type Domain<E extends UserEvt, A extends UserAgg, C extends UserCmd> = {
   handler(bookmark: string): Handler<E>
   command: CmdBody<C>
+  getAggregate(id: string): Promise<A & BaseAgg>
 }
 
 export type ExtCmd<C extends UserCmd, T extends C['type']> = Omit<

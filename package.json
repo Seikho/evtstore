@@ -4,7 +4,7 @@
   "description": "Event Sourcing with Node.JS",
   "main": "build/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha \"build/test/**/*.spec.js\""
   },
   "repository": {
     "type": "git",
@@ -24,7 +24,12 @@
   },
   "homepage": "https://github.com/seikho/es-node#readme",
   "devDependencies": {
+    "@types/chai": "^4.2.3",
+    "@types/mocha": "^5.2.7",
     "@types/mongodb": "^3.3.6",
-    "mongodb": "^3.3.2"
+    "chai": "^4.2.0",
+    "mocha": "^6.2.1",
+    "mongodb": "^3.3.2",
+    "typescript": "^3.6.4"
   }
 }
