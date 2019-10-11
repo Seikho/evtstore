@@ -2,7 +2,7 @@
   "name": "es-node",
   "version": "0.0.1",
   "description": "Event Sourcing with Node.JS",
-  "main": "build/index.js",
+  "main": "build/src/index.js",
   "scripts": {
     "test": "mocha \"build/test/**/*.spec.js\""
   },
@@ -31,5 +31,6 @@
     "mocha": "^6.2.1",
     "mongodb": "^3.3.2",
     "typescript": "^3.6.4"
-  }
+  },
+  "types": "build/src/index.d.ts"
 }

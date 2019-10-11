@@ -1,3 +1,6 @@
+export type Evt<T extends string, B extends {}> = { type: T } & B
+export type Cmd<T extends string, B extends {}> = { type: T } & B
+
 export type UserEvt = {
   type: string
 }
