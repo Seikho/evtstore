@@ -1,0 +1,30 @@
+{
+  "name": "es-node",
+  "version": "0.0.1",
+  "description": "Event Sourcing with Node.JS",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seikho/es-node.git"
+  },
+  "keywords": [
+    "event",
+    "sourcing",
+    "source",
+    "stream",
+    "cqrs"
+  ],
+  "author": "Carl Winkler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/seikho/es-node/issues"
+  },
+  "homepage": "https://github.com/seikho/es-node#readme",
+  "devDependencies": {
+    "@types/mongodb": "^3.3.6",
+    "mongodb": "^3.3.2"
+  }
+}
