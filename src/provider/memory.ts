@@ -31,16 +31,17 @@ export function createProvider<E extends UserEvt>(initEvents?: Array<StoredEvt<E
       version,
       position: events.length,
       aggregateId,
-      timestamp: new Date(Date.now())
+      timestamp: new Date(Date.now()),
     })
     return
   }
 
   return {
+    driver: 'memory',
     getPosition,
     setPosition,
     getEventsFor,
     getEventsFrom,
-    append
+    append,
   }
 }
