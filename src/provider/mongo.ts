@@ -12,6 +12,7 @@ export function createProvider<E extends UserEvt>(
   bookmarks: Collection<Bookmark>
 ): Provider<E> {
   return {
+    driver: 'mongo',
     getPosition: bm => getPos(bm, bookmarks),
     setPosition: (bm, pos) => setPos(bm, pos, bookmarks),
     getEventsFor: async (stream, id) =>
@@ -28,19 +29,32 @@ export function createProvider<E extends UserEvt>(
       const existing = await events.findOne({
         stream,
         version,
-        aggregateId
+        aggregateId,
       })
       if (existing) throw new VersionError()
       const timestamp = new Date(Date.now())
       const position = new Timestamp(0, 0)
 
-      await events.insertOne({ stream, position, version, timestamp, event, aggregateId })
-    }
+      await events.insertOne({
+        stream,
+        position,
+        version,
+        timestamp,
+        event,
+        aggregateId,
+      })
+    },
   }
 }
 
-export async function migrate(events: Collection<StoredEvt<any>>, bookmarks: Collection<Bookmark>) {
-  await bookmarks.createIndex({ bookmark: 1 }, { name: 'bookmark-index', unique: true })
+export async function migrate(
+  events: Collection<StoredEvt<any>>,
+  bookmarks: Collection<Bookmark>
+) {
+  await bookmarks.createIndex(
+    { bookmark: 1 },
+    { name: 'bookmark-index', unique: true }
+  )
   await events.createIndex(
     { stream: 1, position: 1 },
     { name: 'stream-position-index', unique: true }
@@ -53,9 +67,15 @@ export async function migrate(events: Collection<StoredEvt<any>>, bookmarks: Col
 }
 
 async function getPos(bm: string, coll: Collection<Bookmark>) {
-  return coll.findOne({ bookmark: bm })
+  const record = await coll.findOne({ bookmark: bm })
+  if (record) return record.position
+  return new Timestamp(0, 0)
 }
 
 async function setPos(bm: string, pos: Timestamp, coll: Collection<Bookmark>) {
-  await coll.updateOne({ bookmark: bm }, { $set: { position: pos } }, { upsert: true })
+  await coll.updateOne(
+    { bookmark: bm },
+    { $set: { position: pos } },
+    { upsert: true }
+  )
 }
