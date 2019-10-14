@@ -1,14 +1,4 @@
-import {
-  UserEvt,
-  UserAgg,
-  Fold,
-  Provider,
-  Domain,
-  Command,
-  UserCmd,
-  CmdBody,
-  BaseAgg,
-} from './types'
+import { UserEvt, UserAgg, Fold, Provider, Domain, Command, UserCmd, CmdBody } from './types'
 import { Handler } from './handler'
 
 type DomainOptions<E extends UserEvt, A extends UserAgg> = {
@@ -18,11 +8,7 @@ type DomainOptions<E extends UserEvt, A extends UserAgg> = {
   provider: Provider<E>
 }
 
-export function createDomain<
-  Evt extends UserEvt,
-  Agg extends UserAgg,
-  Cmd extends UserCmd
->(
+export function createDomain<Evt extends UserEvt, Agg extends UserAgg, Cmd extends UserCmd>(
   opts: DomainOptions<Evt, Agg>,
   cmd: Command<Evt, Agg, Cmd>
 ): Domain<Evt, Agg, Cmd> {

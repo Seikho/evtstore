@@ -104,7 +104,7 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
 
 const userPopulator = userDomain.handler('user-populator')
 
-userPopulator.handle('NameChanged', async event => {
+userPopulator.handle('NameChanged', async (aggregateId, event) => {
   // The "event" parameter will be the NameChanged type
 })
 
