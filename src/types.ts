@@ -24,26 +24,15 @@ type ID = { aggregateId: string }
 
 export type BaseAgg = { version: number; aggregateId: string }
 
-export type Fold<E extends UserEvt, A extends UserAgg> = (
-  ev: E,
-  agg: A
-) => Partial<A>
+export type Fold<E extends UserEvt, A extends UserAgg> = (ev: E, agg: A) => Partial<A>
 
 export type Provider<Evt extends UserEvt> = {
   driver: string
   getPosition(bookmark: string): Promise<any>
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string, position: any): Promise<Array<StoredEvt<Evt>>>
-  getEventsFor(
-    stream: string,
-    aggregateId: string
-  ): Promise<Array<StoredEvt<Evt>>>
-  append(
-    stream: string,
-    event: Evt,
-    aggregateId: string,
-    version: number
-  ): Promise<void>
+  getEventsFor(stream: string, aggregateId: string): Promise<Array<StoredEvt<Evt>>>
+  append(stream: string, event: Evt, aggregateId: string, version: number): Promise<void>
 }
 
 export type Handler<E extends UserEvt> = {
@@ -73,10 +62,7 @@ export type Domain<E extends UserEvt, A extends UserAgg, C extends UserCmd> = {
   getAggregate(id: string): Promise<A & BaseAgg>
 }
 
-export type ExtCmd<C extends UserCmd, T extends C['type']> = Omit<
-  Ext<C, T>,
-  'type'
->
+export type ExtCmd<C extends UserCmd, T extends C['type']> = Omit<Ext<C, T>, 'type'>
 
 export type CmdBody<C extends UserCmd> = {
   [cmd in C['type']]: (aggId: string, body: ExtCmd<C, cmd>) => Promise<void>
