@@ -27,7 +27,7 @@
     "url": "https://github.com/seikho/evtstore/issues"
   },
   "homepage": "https://github.com/seikho/evtstore#readme",
-  "dependencies": {
+  "peerDependencies": {
     "@types/mongodb": "^3.3.6"
   },
   "devDependencies": {
