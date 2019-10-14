@@ -1,14 +1,17 @@
 import * as util from './util'
-import * as memory from '../src/provider/memory'
+import * as memory from '../../provider/memory'
 import { tests, registerTestDomain, getDomain } from './tests'
-import { StoredEvt, Provider } from '../src/types'
-import { Bookmark, migrate, createProvider } from '../src/provider/mongo'
+import { StoreEvent, Provider } from '../types'
+import { Bookmark, migrate, createProvider } from '../../provider/mongo'
 import { ExampleEv } from './example'
 import { expect } from 'chai'
 
-const providers: { [key: string]: Promise<Provider<ExampleEv>> } = {
+type ProviderHelper = Provider<ExampleEv> | Promise<Provider<ExampleEv>>
+
+const providers: { [key: string]: ProviderHelper } = {
   memory: Promise.resolve(memory.createProvider<ExampleEv>()),
-  mongo: createMongoProvider(),
+  mongo: createMongo(),
+  mongoAsync: createMongoAsync(),
 }
 
 describe('provider tests', () => {
@@ -54,11 +57,22 @@ async function setupDomains() {
   }
 }
 
-async function createMongoProvider() {
+async function createMongo() {
   await util.createCleanDb()
   const { db } = await util.getTestDatabase()
-  const events = db.collection<StoredEvt<any>>('events')
+  const events = db.collection<StoreEvent<any>>('events')
   const bookmarks = db.collection<Bookmark>('bookmarks')
   await migrate(events, bookmarks)
-  return createProvider<ExampleEv>(events, bookmarks)
+  return createProvider<ExampleEv>({ events, bookmarks })
+}
+
+function createMongoAsync() {
+  const toColl = async (name: string) => {
+    await util.createCleanDb()
+    const { db } = await util.getTestDatabase()
+    return db.collection(name)
+  }
+  const events = toColl('eventsAsync')
+  const bookmarks = toColl('bookmarksAsync')
+  return createProvider<ExampleEv>({ events, bookmarks })
 }

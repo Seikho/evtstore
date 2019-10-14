@@ -3,3 +3,4 @@ build/
 *.js
 *.map
 *.log
+*.d.ts

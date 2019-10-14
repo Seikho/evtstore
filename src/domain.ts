@@ -1,19 +1,19 @@
-import { UserEvt, UserAgg, Fold, Provider, Domain, Command, UserCmd, CmdBody } from './types'
-import { Handler } from './handler'
+import { Event, Aggregate, Fold, Provider, Domain, Command, CmdBody, CommandHandler } from './types'
+import { EventHandler } from './handler'
 
-type DomainOptions<E extends UserEvt, A extends UserAgg> = {
+type DomainOptions<E extends Event, A extends Aggregate> = {
   aggregate: () => A
   stream: string
   fold: Fold<E, A>
-  provider: Provider<E>
+  provider: Provider<E> | Promise<Provider<E>>
 }
 
-export function createDomain<Evt extends UserEvt, Agg extends UserAgg, Cmd extends UserCmd>(
+export function createDomain<Evt extends Event, Agg extends Aggregate, Cmd extends Command>(
   opts: DomainOptions<Evt, Agg>,
-  cmd: Command<Evt, Agg, Cmd>
+  cmd: CommandHandler<Evt, Agg, Cmd>
 ): Domain<Evt, Agg, Cmd> {
   function handler(bookmark: string) {
-    return new Handler({
+    return new EventHandler({
       bookmark,
       provider: opts.provider,
       stream: opts.stream,
@@ -26,15 +26,17 @@ export function createDomain<Evt extends UserEvt, Agg extends UserAgg, Cmd exten
   }
 }
 
-function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
+function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
   opts: DomainOptions<E, A>,
-  cmd: Command<E, A, C>
+  cmd: CommandHandler<E, A, C>
 ) {
   const keys = Object.keys(cmd) as Array<C['type']>
   const command: CmdBody<C> = {} as any
+  const providerAsync = Promise.resolve(opts.provider)
 
   async function getAggregate(id: string) {
-    const events = await opts.provider.getEventsFor(opts.stream, id)
+    const provider = await providerAsync
+    const events = await provider.getEventsFor(opts.stream, id)
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
     const agg = events.reduce((next, ev) => {
       return { ...next, ...opts.fold(ev.event, next), version: ev.version }
@@ -48,7 +50,8 @@ function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
       const result = await cmd[type]({ ...body, aggregateId: id }, agg)
 
       if (result) {
-        await opts.provider.append(opts.stream, result, id, agg.version + 1)
+        const provider = await providerAsync
+        await provider.append(opts.stream, result, id, agg.version + 1)
       }
     }
   }

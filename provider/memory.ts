@@ -1,8 +1,8 @@
-import { UserEvt, Provider, StoredEvt } from '../types'
+import { Event, Provider, StoreEvent } from '../src/types'
 import { VersionError } from './error'
 
-export function createProvider<E extends UserEvt>(initEvents?: Array<StoredEvt<E>>): Provider<E> {
-  const events: Array<StoredEvt<E>> = initEvents || []
+export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>>): Provider<E> {
+  const events: Array<StoreEvent<E>> = initEvents || []
   const bms = new Map<string, number>()
 
   const getPosition = async (bm: string) => bms.get(bm) || 0

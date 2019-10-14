@@ -1,4 +1,4 @@
-import { Command } from '../src/types'
+import { CommandHandler } from '../types'
 
 export type EvOne = { type: 'one'; one: number }
 export type EvTwo = { type: 'two'; two: string }
@@ -7,10 +7,7 @@ export type ExampleEv = EvOne | EvTwo | EvThree
 
 export type ExampleAgg = { one: number; two: string; three: number[] }
 
-export function exampleFold(
-  ev: EvOne | EvTwo | EvThree,
-  _agg: ExampleAgg
-): Partial<ExampleAgg> {
+export function exampleFold(ev: EvOne | EvTwo | EvThree, _agg: ExampleAgg): Partial<ExampleAgg> {
   switch (ev.type) {
     case 'one':
       return { one: ev.one }
@@ -27,7 +24,7 @@ export type DoThree = { type: 'doThree'; three: number[] }
 
 export type ExampleCmd = DoOne | DoTwo | DoThree
 
-export const exampleCmd: Command<ExampleEv, ExampleAgg, ExampleCmd> = {
+export const exampleCmd: CommandHandler<ExampleEv, ExampleAgg, ExampleCmd> = {
   async doOne(cmd, _agg) {
     return { type: 'one', one: cmd.one }
   },

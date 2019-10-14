@@ -1,12 +1,7 @@
-import { CmdBody, Handler, Provider, createDomain } from '../src'
-import {
-  ExampleEv,
-  ExampleAgg,
-  ExampleCmd,
-  exampleFold,
-  exampleCmd,
-} from './example'
-import { BaseAgg } from '../src/types'
+import { CmdBody, Handler, Provider } from '../types'
+import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
+import { BaseAggregate } from '../types'
+import { createDomain } from '../domain'
 
 type Model = {
   one: number
@@ -15,10 +10,8 @@ type Model = {
 
 interface Test {
   will: string
-  input: Array<
-    (cmd: CmdBody<ExampleCmd>, hnd: Handler<ExampleEv>) => Promise<void>
-  >
-  agg?: Partial<ExampleAgg & BaseAgg> & { id: string }
+  input: Array<(cmd: CmdBody<ExampleCmd>, hnd: Handler<ExampleEv>) => Promise<void>>
+  agg?: Partial<ExampleAgg & BaseAggregate> & { id: string }
   model?: Partial<Model> & { id: string }
 }
 
@@ -46,17 +39,14 @@ export const tests: Test[] = [
 
 type TestDomain = {
   command: CmdBody<ExampleCmd>
-  getAggregate: (id: string) => Promise<ExampleAgg & BaseAgg>
+  getAggregate: (id: string) => Promise<ExampleAgg & BaseAggregate>
   models: Map<string, Model>
   populator: Handler<ExampleEv>
 }
 
 const domains = new Map<string, TestDomain>()
 
-export function registerTestDomain(
-  name: string,
-  provider: Provider<ExampleEv>
-) {
+export function registerTestDomain(name: string, provider: Provider<ExampleEv>) {
   const { command, getAggregate, handler } = createDomain(
     {
       provider,

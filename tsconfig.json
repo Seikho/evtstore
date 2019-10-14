@@ -5,9 +5,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "sourceMap": true,
-    "outDir": "build",
     "declaration": true,
-    "declarationDir": "build"
+    "inlineSourceMap": true
   }
 }

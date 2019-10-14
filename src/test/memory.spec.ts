@@ -1,19 +1,9 @@
 import { expect } from 'chai'
-import { createProvider } from '../src/provider/memory'
-import { createDomain } from '../src'
-import {
-  ExampleEv,
-  ExampleAgg,
-  ExampleCmd,
-  exampleFold,
-  exampleCmd,
-} from './example'
+import { createProvider } from '../../provider/memory'
+import { createDomain } from '../domain'
+import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 
-const { command, getAggregate, handler } = createDomain<
-  ExampleEv,
-  ExampleAgg,
-  ExampleCmd
->(
+const { command, getAggregate, handler } = createDomain<ExampleEv, ExampleAgg, ExampleCmd>(
   {
     aggregate: () => ({ one: 0, two: '', three: [] }),
     fold: exampleFold,
