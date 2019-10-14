@@ -8,7 +8,7 @@
     "clean": "rimraf build",
     "prebuild": "yarn clean",
     "build": "tsc",
-    "prepublish": "yarn build"
+    "prepublishOnly": "yarn build"
   },
   "repository": {
     "type": "git",
