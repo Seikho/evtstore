@@ -4,7 +4,7 @@
   "description": "Event Sourcing with Node.JS",
   "main": "build/src/index.js",
   "scripts": {
-    "test": "mocha \"build/test/**/*.spec.js\"",
+    "test": "mocha \"build/test/**/*.spec.js\" --exit",
     "clean": "rimraf build",
     "prebuild": "yarn clean",
     "build": "tsc",
