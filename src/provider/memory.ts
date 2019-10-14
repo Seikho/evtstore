@@ -1,8 +1,7 @@
 import { UserEvt, Provider, StoredEvt, ID } from '../types'
+import { VersionError } from './error'
 
-export function createProvider<E extends UserEvt>(
-  initEvents?: Array<StoredEvt<E>>
-): Provider<E> {
+export function createProvider<E extends UserEvt>(initEvents?: Array<StoredEvt<E>>): Provider<E> {
   const events: Array<StoredEvt<E>> = initEvents || []
   const bms = new Map<string, number>()
 
@@ -17,15 +16,13 @@ export function createProvider<E extends UserEvt>(
   }
 
   const getEventsFor = async (stream: string, id: string) => {
-    return events.filter(
-      ev => ev.stream === stream && ev.event.aggregateId === id
-    )
+    return events.filter(ev => ev.stream === stream && ev.event.aggregateId === id)
   }
 
   const append = async (stream: string, event: E & ID, version: number) => {
     const aggEvents = await getEventsFor(stream, event.aggregateId)
     for (const ev of aggEvents) {
-      if (ev.version === version) throw new Error('Version conflict error')
+      if (ev.version === version) throw new VersionError()
     }
 
     events.push({
@@ -33,7 +30,7 @@ export function createProvider<E extends UserEvt>(
       event,
       version,
       position: events.length,
-      timestamp: new Date(Date.now()),
+      timestamp: new Date(Date.now())
     })
     return
   }
@@ -43,6 +40,6 @@ export function createProvider<E extends UserEvt>(
     setPosition,
     getEventsFor,
     getEventsFrom,
-    append,
+    append
   }
 }
