@@ -4,11 +4,14 @@
   "description": "Event Sourcing with Node.JS",
   "main": "build/src/index.js",
   "scripts": {
-    "test": "mocha \"build/test/**/*.spec.js\""
+    "test": "mocha \"build/test/**/*.spec.js\"",
+    "clean": "rimraf build",
+    "prebuild": "yarn clean",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/seikho/es-node.git"
+    "url": "git+https://github.com/seikho/evtstore.git"
   },
   "keywords": [
     "event",
@@ -20,16 +23,19 @@
   "author": "Carl Winkler",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/seikho/es-node/issues"
+    "url": "https://github.com/seikho/evtstore/issues"
   },
-  "homepage": "https://github.com/seikho/es-node#readme",
+  "homepage": "https://github.com/seikho/evtstore#readme",
+  "dependencies": {
+    "@types/mongodb": "^3.3.6"
+  },
   "devDependencies": {
     "@types/chai": "^4.2.3",
     "@types/mocha": "^5.2.7",
-    "@types/mongodb": "^3.3.6",
     "chai": "^4.2.0",
     "mocha": "^6.2.1",
     "mongodb": "^3.3.2",
+    "rimraf": "^3.0.0",
     "typescript": "^3.6.4"
   },
   "types": "build/src/index.d.ts"
