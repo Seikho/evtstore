@@ -1,4 +1,4 @@
-import { Collection, Timestamp } from 'mongodb'
+import { Collection, Timestamp, MongoError } from 'mongodb'
 import { UserEvt, StoredEvt, Provider } from '../types'
 import { VersionError } from './error'
 
@@ -26,35 +26,28 @@ export function createProvider<E extends UserEvt>(
         .sort({ position: 1 })
         .toArray(),
     append: async (stream, event, aggregateId, version) => {
-      const existing = await events.findOne({
-        stream,
-        version,
-        aggregateId,
-      })
-      if (existing) throw new VersionError()
       const timestamp = new Date(Date.now())
       const position = new Timestamp(0, 0)
 
-      await events.insertOne({
-        stream,
-        position,
-        version,
-        timestamp,
-        event,
-        aggregateId,
-      })
+      try {
+        await events.insertOne({
+          stream,
+          position,
+          version,
+          timestamp,
+          event,
+          aggregateId,
+        })
+      } catch (ex) {
+        if (ex instanceof MongoError && ex.code === 11000) throw new VersionError()
+        throw ex
+      }
     },
   }
 }
 
-export async function migrate(
-  events: Collection<StoredEvt<any>>,
-  bookmarks: Collection<Bookmark>
-) {
-  await bookmarks.createIndex(
-    { bookmark: 1 },
-    { name: 'bookmark-index', unique: true }
-  )
+export async function migrate(events: Collection<StoredEvt<any>>, bookmarks: Collection<Bookmark>) {
+  await bookmarks.createIndex({ bookmark: 1 }, { name: 'bookmark-index', unique: true })
   await events.createIndex(
     { stream: 1, position: 1 },
     { name: 'stream-position-index', unique: true }
@@ -73,9 +66,5 @@ async function getPos(bm: string, coll: Collection<Bookmark>) {
 }
 
 async function setPos(bm: string, pos: Timestamp, coll: Collection<Bookmark>) {
-  await coll.updateOne(
-    { bookmark: bm },
-    { $set: { position: pos } },
-    { upsert: true }
-  )
+  await coll.updateOne({ bookmark: bm }, { $set: { position: pos } }, { upsert: true })
 }
