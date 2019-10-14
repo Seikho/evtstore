@@ -15,7 +15,7 @@ export class Handler<E extends UserEvt> implements Handler<E> {
   private provider: Provider<E>
   private position: any
   private running = false
-  private handlers = new Map<E['type'], (ev: E) => Promise<any>>()
+  private handlers = new Map<E['type'], (id: string, ev: E) => Promise<any>>()
 
   constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
@@ -25,7 +25,7 @@ export class Handler<E extends UserEvt> implements Handler<E> {
 
   handle<T extends E['type']>(
     type: T,
-    cb: (event: Ext<E, T>) => Promise<void>
+    cb: (aggregateId: string, event: Ext<E, T>) => Promise<void>
   ) {
     this.handlers.set(type, cb as any)
   }
@@ -52,7 +52,7 @@ export class Handler<E extends UserEvt> implements Handler<E> {
     for (const event of events) {
       const handler = this.handlers.get(event.event.type)
       if (handler) {
-        await handler(event.event)
+        await handler(event.aggregateId, event.event)
       }
       this.position = event.position
       await this.provider.setPosition(this.bookmark, this.position)

@@ -7,7 +7,7 @@ import {
   Command,
   UserCmd,
   CmdBody,
-  BaseAgg
+  BaseAgg,
 } from './types'
 import { Handler } from './handler'
 
@@ -18,7 +18,11 @@ type DomainOptions<E extends UserEvt, A extends UserAgg> = {
   provider: Provider<E>
 }
 
-export function createDomain<Evt extends UserEvt, Agg extends UserAgg, Cmd extends UserCmd>(
+export function createDomain<
+  Evt extends UserEvt,
+  Agg extends UserAgg,
+  Cmd extends UserCmd
+>(
   opts: DomainOptions<Evt, Agg>,
   cmd: Command<Evt, Agg, Cmd>
 ): Domain<Evt, Agg, Cmd> {
@@ -26,13 +30,13 @@ export function createDomain<Evt extends UserEvt, Agg extends UserAgg, Cmd exten
     return new Handler({
       bookmark,
       provider: opts.provider,
-      stream: opts.stream
+      stream: opts.stream,
     })
   }
 
   return {
     handler,
-    ...wrapCmd(opts, cmd)
+    ...wrapCmd(opts, cmd),
   }
 }
 
@@ -42,26 +46,14 @@ function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
 ) {
   const keys = Object.keys(cmd) as Array<C['type']>
   const command: CmdBody<C> = {} as any
-  const cache = new Map<string, A & BaseAgg>()
 
   async function getAggregate(id: string) {
-    {
-      const agg = cache.get(id)
-      if (agg) return agg
-    }
-
     const events = await opts.provider.getEventsFor(opts.stream, id)
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
     const agg = events.reduce((next, ev) => {
       return { ...next, ...opts.fold(ev.event, next), version: ev.version }
     }, next)
-    cache.set(id, agg)
     return agg
-  }
-
-  function updateAgg(ev: E, agg: A & BaseAgg) {
-    const next = { ...agg, ...opts.fold(ev, agg), version: agg.version + 1 }
-    cache.set(agg.aggregateId, next)
   }
 
   for (const type of keys) {
@@ -71,7 +63,6 @@ function wrapCmd<E extends UserEvt, A extends UserAgg, C extends UserCmd>(
 
       if (result) {
         await opts.provider.append(opts.stream, result, id, agg.version + 1)
-        updateAgg(result, agg)
       }
     }
   }
