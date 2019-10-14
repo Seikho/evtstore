@@ -1,24 +1,14 @@
 import { expect } from 'chai'
 import { createProvider } from '../src/provider/memory'
 import { createDomain } from '../src'
-import {
-  ExampleEv,
-  ExampleAgg,
-  ExampleCmd,
-  exampleFold,
-  exampleCmd,
-} from './example'
+import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 
-const { command, getAggregate, handler } = createDomain<
-  ExampleEv,
-  ExampleAgg,
-  ExampleCmd
->(
+const { command, getAggregate, handler } = createDomain<ExampleEv, ExampleAgg, ExampleCmd>(
   {
     aggregate: () => ({ one: 0, two: '', three: [] }),
     fold: exampleFold,
     provider: createProvider(),
-    stream: 'example',
+    stream: 'example'
   },
   exampleCmd
 )
@@ -26,7 +16,7 @@ const { command, getAggregate, handler } = createDomain<
 const model = handler('bm')
 const readModel = {
   v: 0,
-  last: '',
+  last: ''
 }
 model.handle('one', async ev => {
   readModel.v++
@@ -43,6 +33,7 @@ describe('in memory provider::commands', () => {
     await command.doOne('1', { one: 1 })
     const actual = await getAggregate('1')
     expect(actual.one).to.equal(1)
+    expect(actual.version).to.equal(1)
   })
 
   it('will append a 2nd event', async () => {
@@ -66,7 +57,7 @@ describe('in memory provider::commands', () => {
       one: 1,
       two: 'two',
       three: [],
-      version: 2,
+      version: 2
     })
   })
 })

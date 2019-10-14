@@ -14,29 +14,24 @@ export type StoredEvt<T = unknown> = {
   position: any
   version: number
   timestamp: Date
-  event: T & ID
+  event: T
+  aggregateId: string
 }
 
 export type UserAgg = {}
 
-export type ID = { aggregateId: string }
+type ID = { aggregateId: string }
 
-export type BaseAgg = ID & { version: number }
+export type BaseAgg = { version: number; aggregateId: string }
 
-export type Fold<E extends UserEvt, A extends UserAgg> = (
-  ev: E,
-  agg: A & ID
-) => Partial<A>
+export type Fold<E extends UserEvt, A extends UserAgg> = (ev: E, agg: A) => Partial<A>
 
 export type Provider<Evt extends UserEvt> = {
   getPosition(bookmark: string): Promise<any>
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string, position: any): Promise<Array<StoredEvt<Evt>>>
-  getEventsFor(
-    stream: string,
-    aggregateId: string
-  ): Promise<Array<StoredEvt<Evt>>>
-  append(stream: string, event: Evt & ID, version: number): Promise<void>
+  getEventsFor(stream: string, aggregateId: string): Promise<Array<StoredEvt<Evt>>>
+  append(stream: string, event: Evt, aggregateId: string, version: number): Promise<void>
 }
 
 export type Handler<E extends UserEvt> = {
@@ -44,10 +39,7 @@ export type Handler<E extends UserEvt> = {
   stop(): void
   reset(): void
   runOnce(): Promise<number>
-  handle: <T extends E['type']>(
-    type: T,
-    cb: (event: Ext<E, T>) => Promise<any>
-  ) => void
+  handle: <T extends E['type']>(type: T, cb: (event: Ext<E, T>) => Promise<any>) => void
 }
 
 export type Ext<E extends UserEvt, T extends E['type']> = E extends {
@@ -57,10 +49,7 @@ export type Ext<E extends UserEvt, T extends E['type']> = E extends {
   : never
 
 export type Command<E extends UserEvt, A extends UserAgg, C extends UserCmd> = {
-  [key in C['type']]: (
-    cmd: ExtCmd<C, key> & ID,
-    agg: A & ID
-  ) => Promise<(E) | void>
+  [key in C['type']]: (cmd: ExtCmd<C, key> & ID, agg: A) => Promise<(E) | void>
 }
 
 export type Domain<E extends UserEvt, A extends UserAgg, C extends UserCmd> = {
@@ -69,10 +58,7 @@ export type Domain<E extends UserEvt, A extends UserAgg, C extends UserCmd> = {
   getAggregate(id: string): Promise<A & BaseAgg>
 }
 
-export type ExtCmd<C extends UserCmd, T extends C['type']> = Omit<
-  Ext<C, T>,
-  'type'
->
+export type ExtCmd<C extends UserCmd, T extends C['type']> = Omit<Ext<C, T>, 'type'>
 
 export type CmdBody<C extends UserCmd> = {
   [cmd in C['type']]: (aggId: string, body: ExtCmd<C, cmd>) => Promise<void>

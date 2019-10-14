@@ -1,4 +1,4 @@
-import { UserEvt, Provider, StoredEvt, ID } from '../types'
+import { UserEvt, Provider, StoredEvt } from '../types'
 import { VersionError } from './error'
 
 export function createProvider<E extends UserEvt>(initEvents?: Array<StoredEvt<E>>): Provider<E> {
@@ -16,11 +16,11 @@ export function createProvider<E extends UserEvt>(initEvents?: Array<StoredEvt<E
   }
 
   const getEventsFor = async (stream: string, id: string) => {
-    return events.filter(ev => ev.stream === stream && ev.event.aggregateId === id)
+    return events.filter(ev => ev.stream === stream && ev.aggregateId === id)
   }
 
-  const append = async (stream: string, event: E & ID, version: number) => {
-    const aggEvents = await getEventsFor(stream, event.aggregateId)
+  const append = async (stream: string, event: E, aggregateId: string, version: number) => {
+    const aggEvents = await getEventsFor(stream, aggregateId)
     for (const ev of aggEvents) {
       if (ev.version === version) throw new VersionError()
     }
@@ -30,6 +30,7 @@ export function createProvider<E extends UserEvt>(initEvents?: Array<StoredEvt<E
       event,
       version,
       position: events.length,
+      aggregateId,
       timestamp: new Date(Date.now())
     })
     return

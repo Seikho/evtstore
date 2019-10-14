@@ -16,7 +16,7 @@ export function createProvider<E extends UserEvt>(
     setPosition: (bm, pos) => setPos(bm, pos, bookmarks),
     getEventsFor: async (stream, id) =>
       events
-        .find({ stream, 'event.aggregateId': id })
+        .find({ stream, aggregateId: id })
         .sort({ position: 1 })
         .toArray(),
     getEventsFrom: async (stream, position) =>
@@ -24,17 +24,17 @@ export function createProvider<E extends UserEvt>(
         .find({ stream, position: { $gte: position } })
         .sort({ position: 1 })
         .toArray(),
-    append: async (stream, event, version) => {
+    append: async (stream, event, aggregateId, version) => {
       const existing = await events.findOne({
         stream,
         version,
-        'event.aggregateId': event.aggregateId
+        aggregateId
       })
       if (existing) throw new VersionError()
       const timestamp = new Date(Date.now())
       const position = new Timestamp(0, 0)
 
-      await events.insertOne({ stream, position, version, timestamp, event })
+      await events.insertOne({ stream, position, version, timestamp, event, aggregateId })
     }
   }
 }
@@ -47,12 +47,7 @@ export async function migrate(events: Collection<StoredEvt<any>>, bookmarks: Col
   )
 
   await events.createIndex(
-    { stream: 1, position: 1, 'event.type': 1 },
-    { name: 'stream-position-type-index', unique: true }
-  )
-
-  await events.createIndex(
-    { stream: 1, 'event.aggregateId': 1, version: 1 },
+    { stream: 1, aggregateId: 1, version: 1 },
     { name: 'stream-id-version-index', unique: true }
   )
 }
