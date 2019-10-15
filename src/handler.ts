@@ -44,7 +44,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.position = undefined
   }
 
-  async runOnce() {
+  runOnce = async () => {
     const provider = await this.provider
     if (!this.position) {
       this.position = await provider.getPosition(this.bookmark)
@@ -64,7 +64,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     return events.length
   }
 
-  async run() {
+  run = async () => {
     if (!this.running) {
       setTimeout(this.run, POLL)
       return
