@@ -46,7 +46,7 @@ describe('provider tests', () => {
 function match(actual: any, expected: any) {
   for (const key in actual) {
     if (key === 'id') continue
-    expect(actual[key]).to.equal(expected[key])
+    expect(actual[key], key).to.equal(expected[key])
   }
 }
 

@@ -4,6 +4,7 @@ import { VersionError } from './error'
 export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>>): Provider<E> {
   const events: Array<StoreEvent<E>> = initEvents || []
   const bms = new Map<string, number>()
+  let position = 0
 
   const getPosition = async (bm: string) => bms.get(bm) || 0
 
@@ -29,10 +30,11 @@ export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>
       stream,
       event,
       version,
-      position: events.length,
+      position: ++position,
       aggregateId,
       timestamp: new Date(Date.now()),
     })
+
     return
   }
 
