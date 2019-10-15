@@ -22,6 +22,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.bookmark = opts.bookmark
     this.stream = opts.stream
     this.provider = Promise.resolve(opts.provider)
+    this.run()
   }
 
   handle<T extends E['type']>(
