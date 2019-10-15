@@ -30,7 +30,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
     getEventsFrom: async (stream, position) =>
       events.then(coll =>
         coll
-          .find({ stream, position: { $gte: position } })
+          .find({ stream, position: { $gt: position } })
           .sort({ position: 1 })
           .toArray()
       ),

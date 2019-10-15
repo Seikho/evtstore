@@ -35,6 +35,17 @@ export const tests: Test[] = [
       one: 42 + 84,
     },
   },
+  {
+    will: 'append event to new aggregate',
+    input: [cmd => cmd.doOne('two', { one: 100 })],
+    agg: { id: 'two', one: 100, version: 1 },
+  },
+  {
+    will: 'not affect original aggregate/model',
+    input: [],
+    agg: { id: 'one', one: 84, version: 2 },
+    model: { id: 'one', one: 42 + 84, seen: 2 },
+  },
 ]
 
 type TestDomain = {
@@ -52,14 +63,14 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
       provider,
       aggregate: () => ({ one: 0, two: '', three: [] }),
       fold: exampleFold,
-      stream: 'example',
+      stream: `${name}-example`,
     },
     exampleCmd
   )
 
   const models = new Map<string, Model>()
 
-  const populator = handler(`example`)
+  const populator = handler(`${name}-example`)
   populator.handle('one', async (id, ev) => {
     const model = models.get(id) || { one: 0, seen: 0 }
     model.seen++

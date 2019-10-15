@@ -12,7 +12,7 @@ export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>
   }
 
   const getEventsFrom = async (stream: string, pos: number) => {
-    return events.filter(ev => ev.stream === stream && ev.position >= pos)
+    return events.filter(ev => ev.stream === stream && ev.position > pos)
   }
 
   const getEventsFor = async (stream: string, id: string) => {
