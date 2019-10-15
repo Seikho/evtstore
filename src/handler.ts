@@ -1,4 +1,5 @@
-import { Event, Provider, Ext, Handler } from './types'
+import { Event, Provider, Ext, Handler, EventMeta } from './types'
+import { toMeta } from './common'
 
 const POLL = 1000
 const CRASH = 10000
@@ -15,7 +16,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
   private provider: Promise<Provider<E>>
   private position: any
   private running = false
-  private handlers = new Map<E['type'], (id: string, ev: E) => Promise<any>>()
+  private handlers = new Map<E['type'], (id: string, ev: E, meta: EventMeta) => Promise<any>>()
 
   constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
@@ -25,7 +26,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
 
   handle<T extends E['type']>(
     type: T,
-    cb: (aggregateId: string, event: Ext<E, T>) => Promise<void>
+    cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<void>
   ) {
     this.handlers.set(type, cb as any)
   }
@@ -53,7 +54,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     for (const event of events) {
       const handler = this.handlers.get(event.event.type)
       if (handler) {
-        await handler(event.aggregateId, event.event)
+        await handler(event.aggregateId, event.event, toMeta(event))
       }
       this.position = event.position
       await provider.setPosition(this.bookmark, this.position)

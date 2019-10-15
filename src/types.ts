@@ -2,12 +2,13 @@ export type Event = { type: string }
 export type Command = { type: string }
 export type Aggregate = {}
 
-export type StoreEvent<T = unknown> = {
+export type StoreEvent<T = unknown> = EventMeta & { event: T }
+
+export type EventMeta = {
   stream: string
   position: any
   version: number
   timestamp: Date
-  event: T
   aggregateId: string
 }
 
@@ -15,7 +16,11 @@ type ID = { aggregateId: string }
 
 export type BaseAggregate = { version: number; aggregateId: string }
 
-export type Fold<E extends Event, A extends Aggregate> = (ev: E, agg: A) => Partial<A>
+export type Fold<E extends Event, A extends Aggregate> = (
+  ev: E,
+  agg: A,
+  meta: EventMeta
+) => Partial<A>
 
 export type Provider<Evt extends Event> = {
   driver: string
@@ -33,7 +38,7 @@ export type Handler<E extends Event> = {
   runOnce(): Promise<number>
   handle: <T extends E['type']>(
     type: T,
-    cb: (aggregateId: string, event: Ext<E, T>) => Promise<any>
+    cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<any>
   ) => void
 }
 

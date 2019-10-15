@@ -8,5 +8,6 @@ export {
   CommandHandler,
   Handler,
   CmdBody,
+  EventMeta,
 } from './src/types'
 export { VersionError, CommandError } from './provider/error'

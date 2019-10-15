@@ -1,5 +1,6 @@
 import { Event, Aggregate, Fold, Provider, Domain, Command, CmdBody, CommandHandler } from './types'
 import { EventHandler } from './handler'
+import { toMeta } from './common'
 
 type DomainOptions<E extends Event, A extends Aggregate> = {
   aggregate: () => A
@@ -39,7 +40,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     const events = await provider.getEventsFor(opts.stream, id)
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
     const agg = events.reduce((next, ev) => {
-      return { ...next, ...opts.fold(ev.event, next), version: ev.version }
+      return { ...next, ...opts.fold(ev.event, next, toMeta(ev)), version: ev.version }
     }, next)
     return agg
   }
