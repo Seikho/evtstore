@@ -1,5 +1,8 @@
+import * as knex from 'knex'
 import * as util from './util'
 import * as memory from '../../provider/memory'
+import * as sql from '../../provider/knex'
+import * as fs from 'fs'
 import { tests, registerTestDomain, getDomain } from './tests'
 import { StoreEvent, Provider } from '../types'
 import { Bookmark, migrate, createProvider } from '../../provider/mongo'
@@ -12,6 +15,9 @@ const providers: { [key: string]: ProviderHelper } = {
   memory: Promise.resolve(memory.createProvider<ExampleEv>()),
   mongo: createMongo(),
   mongoAsync: createMongoAsync(),
+  sqliteMemory: createSqliteMemory(),
+  sqliteFile: createSqliteFile(),
+  postgres: createPostgres(),
 }
 
 describe('provider tests', () => {
@@ -19,11 +25,12 @@ describe('provider tests', () => {
 
   for (const name in providers) {
     describe(`::${name}`, () => {
-      for (const { will, input, agg, model } of tests) {
+      for (const { will, input, agg, model, assert } of tests) {
         it(`${name}::${will}`, async () => {
           const { command, getAggregate, models, populator } = getDomain(name)!
+          const provider = await providers[name]
           for (const func of input) {
-            await func(command, populator)
+            await func(command, populator, provider)
           }
 
           if (agg) {
@@ -36,6 +43,10 @@ describe('provider tests', () => {
             const actual = models.get(model.id)
             expect(actual, 'read model exists').to.exist
             match(model, actual)
+          }
+
+          if (assert) {
+            await assert(command, populator, provider)
           }
         })
       }
@@ -58,21 +69,65 @@ async function setupDomains() {
 }
 
 async function createMongo() {
-  await util.createCleanDb()
-  const { db } = await util.getTestDatabase()
+  const { db } = await util.getTestMongoDB('sync-mongo')
   const events = db.collection<StoreEvent<any>>('events')
   const bookmarks = db.collection<Bookmark>('bookmarks')
   await migrate(events, bookmarks)
   return createProvider<ExampleEv>({ events, bookmarks })
 }
 
-function createMongoAsync() {
+async function createMongoAsync() {
   const toColl = async (name: string) => {
-    await util.createCleanDb()
-    const { db } = await util.getTestDatabase()
+    const { db } = await util.getTestMongoDB('async-mongo')
     return db.collection(name)
   }
   const events = toColl('eventsAsync')
   const bookmarks = toColl('bookmarksAsync')
+  await migrate(await events, await bookmarks)
   return createProvider<ExampleEv>({ events, bookmarks })
+}
+
+async function createSqliteMemory() {
+  const db = knex({
+    client: 'sqlite3',
+    connection: ':memory:',
+    useNullAsDefault: true,
+  })
+
+  await sql.migrate({ client: db, events: 'events', bookmarks: 'bookmarks' })
+
+  const events = () => db<any, any>('events')
+  const bookmarks = () => db<any, any>('bookmarks')
+
+  return sql.createProvider<ExampleEv>({ events, bookmarks })
+}
+
+async function createSqliteFile() {
+  try {
+    fs.statSync('test.sqlite')
+    fs.unlinkSync('test.sqlite')
+  } catch (ex) {}
+
+  const db = knex({
+    client: 'sqlite3',
+    connection: 'test.sqlite',
+    useNullAsDefault: true,
+  })
+
+  await sql.migrate({ client: db, events: 'events', bookmarks: 'bookmarks' })
+
+  const events = () => db<any, any>('events')
+  const bookmarks = () => db<any, any>('bookmarks')
+
+  return sql.createProvider<ExampleEv>({ events, bookmarks })
+}
+
+async function createPostgres() {
+  const client = await util.getTestPostgresDB('postgresasync')
+  const provider = sql.createProvider<ExampleEv>({
+    bookmarks: () => client<any, any>('bookmarks'),
+    events: () => client<any, any>('events'),
+  })
+
+  return provider
 }

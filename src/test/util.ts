@@ -1,67 +1,67 @@
-import { Db, MongoClient } from 'mongodb'
+import * as knex from 'knex'
+import * as sql from '../../provider/knex'
+import { MongoClient } from 'mongodb'
 import { config } from 'dotenv'
 
 config({ path: 'test.env' })
 
-export async function createCleanDb(): Promise<void> {
-  await getTestDatabase()
-  await dropTestDatabase()
-}
+export async function getTestMongoDB(dbName: string) {
+  const port = Number(process.env.MONGO_PORT)
+  if (isNaN(port)) throw new Error('MONGO_PORT not set')
 
-let hasBeenDropped = false
-
-let cachedDatabase: Db
-let cacheClient: MongoClient
-
-async function dropTestDatabase() {
-  if (!hasBeenDropped) {
-    hasBeenDropped = true
-    await cachedDatabase.dropDatabase()
-  }
-
-  const collections = await cachedDatabase.collections()
-  const names = collections.map(coll => coll.collectionName)
-  const emptyQueries = names.map(name => clearCollection(cachedDatabase, name))
-  await Promise.all(emptyQueries)
-}
-
-export async function getTestDatabase() {
-  const uri = process.env.MONGO_URI
-  if (!uri) throw new Error('MONGO_URI not set')
-
-  if (cachedDatabase) {
-    return {
-      db: cachedDatabase!,
-      client: cacheClient!,
-    }
-  }
-
-  const client = await MongoClient.connect(uri, {
+  const client = await MongoClient.connect(`mongodb://127.0.0.1:${port}`, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
 
-  const db = client.db()
+  const db = client.db(dbName)
 
-  cacheClient = client
-  cachedDatabase = db
+  try {
+    await db.dropDatabase()
+  } catch (ex) {}
+
   return { db, client }
 }
 
-export async function clearCollection(db: Db, collectionName: string) {
-  const collection = db.collection(collectionName)
+export async function getTestPostgresDB(dbName: string) {
+  const port = Number(process.env.POSTGRES_PORT)
+  const user = process.env.POSTGRES_USER
+  const password = process.env.POSTGRES_PASSWORD
+  if (!port || !user || !password) throw new Error('POSTGRES vars not set')
 
-  const isCapped = await collection.isCapped()
-  if (isCapped) {
-    const options = await collection.options()
-    await collection.drop()
+  const root = knex({
+    client: 'pg',
+    connection: {
+      host: '127.0.0.1',
+      port,
+      user,
+      password,
+      database: 'admin',
+    },
+  })
 
-    return db.createCollection(collectionName, {
-      capped: true,
-      size: options.size,
-      max: options.max,
-    })
-  }
+  try {
+    await root.raw(`DROP DATABASE ${dbName}`)
+  } catch (ex) {}
 
-  return collection.deleteMany({})
+  await root.raw(`CREATE DATABASE ${dbName} OWNER ${user}`)
+
+  const client = knex({
+    client: 'pg',
+    connection: {
+      host: '127.0.0.1',
+      port,
+      user,
+      password,
+      database: dbName,
+    },
+  })
+
+  await sql.migrate({
+    client,
+    events: 'events',
+    bookmarks: 'bookmarks',
+  })
+
+  return client
 }

@@ -8,7 +8,10 @@
     "clean": "rimraf \"*.js\" \"*.js.map\" \"*.d.ts\" \"src/**/*.js*\" \"src/**/*.d.ts\" \"provider/**/*.js*\" \"provider/**/*.d.ts\"",
     "prebuild": "yarn clean",
     "build": "tsc",
-    "prepublishOnly": "yarn run clean && yarn build && yarn test"
+    "prepublishOnly": "yarn run clean && yarn build && yarn test",
+    "db:remove": "docker rm -f evtstore-mongo evtstore-pg || true",
+    "predb:create": "yarn db:remove",
+    "db:create": "docker run -dt --name evtstore-mongo -p 30001:27017 mongo:4.0 && docker run --env-file=test.env -dt --name evtstore-pg -p 30002:5432 postgres:12"
   },
   "repository": {
     "type": "git",
@@ -38,8 +41,10 @@
     "@types/mocha": "^5.2.7",
     "chai": "^4.2.0",
     "dotenv": "^8.1.0",
+    "knex": "^0.20.0",
     "mocha": "^6.2.1",
     "mongodb": "^3.3.2",
+    "pg": "^7.12.1",
     "rimraf": "^3.0.0",
     "sqlite3": "^4.1.0",
     "typescript": "^3.6.4"

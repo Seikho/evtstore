@@ -2,17 +2,25 @@ import { CmdBody, Handler, Provider } from '../types'
 import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 import { BaseAggregate } from '../types'
 import { createDomain } from '../domain'
+import { expect } from 'chai'
 
 type Model = {
   one: number
   seen: number
 }
 
+type InputFn = (
+  cmd: CmdBody<ExampleCmd>,
+  hnd: Handler<ExampleEv>,
+  prv: Provider<ExampleEv>
+) => Promise<void>
+
 interface Test {
   will: string
-  input: Array<(cmd: CmdBody<ExampleCmd>, hnd: Handler<ExampleEv>) => Promise<void>>
+  input: InputFn[]
   agg?: Partial<ExampleAgg & BaseAggregate> & { id: string }
   model?: Partial<Model> & { id: string }
+  assert?: InputFn
 }
 
 export const tests: Test[] = [
@@ -45,6 +53,29 @@ export const tests: Test[] = [
     input: [],
     agg: { id: 'one', one: 84, version: 2 },
     model: { id: 'one', one: 42 + 84, seen: 2 },
+  },
+  {
+    will: 'fetch a bookmark without pre-existing',
+    input: [],
+    assert: async (_, __, prv) => {
+      const bm = await prv.getPosition('undefined')
+      expect(bm).to.exist
+    },
+  },
+  {
+    will: 'throw on version conflict',
+    input: [],
+    assert: async (_, __, prv) => {
+      let threw = false
+      await prv.append(prv.driver, { example: 42 } as any, 'conflict-id', 1)
+      try {
+        await prv.append(prv.driver, { example: 42 } as any, 'conflict-id', 1)
+        threw = false
+      } catch (ex) {
+        threw = true
+      }
+      expect(threw, 'throws on version conflict').to.equal(true)
+    },
   },
 ]
 
