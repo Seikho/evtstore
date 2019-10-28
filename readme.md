@@ -22,11 +22,22 @@ To obtain these goals the design is highly opinionated, but still flexible.
 > npm i evtstore
 ```
 
-`evtstore` is typed with TypeScript and comes with two "providers":
+`evtstore` is typed with TypeScript and comes with multiple storage "providers":
 
-- `evtstore/provider/memory`
-  - In memory provider for experimentation.
-  - This can be initalised with an array of `StoredEvent[]`
+**See `src/test/util.ts` and `provider.spec.ts` for examples**
+
+`evtstore/provider/memory`
+
+- In memory provider for experimentation.
+- This can be initalised with an array of `StoredEvent[]`
+
+`evtstore/provider/knex`
+
+- SQL provider for SQLite and Postgres
+- The `knex` and `sqlite3 or pg` dependencies must be installed prior to use
+- Bookmark table: `{ bookmark: string, position: number }`
+- Events table: `{ stream: string, version: number, position: number, timestamp: DateTime, event: text }`
+- A `migrate` function is provided
 
 `evtstore/provider/mongo`
 
@@ -37,6 +48,7 @@ To obtain these goals the design is highly opinionated, but still flexible.
   - `Bookmark`: `{ bookmark: string, position: Timestamp }`
 - A command that returns an event will `append` an event to the `StoredEvent` collection
 - An event handler will create and maintain a `Bookmark`
+- A `migrate` function is provided
 
 ## Examples
 
