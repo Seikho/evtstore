@@ -1,4 +1,5 @@
 src/test
 .vscode/
 .git/
+*.sqlite
 *.log
