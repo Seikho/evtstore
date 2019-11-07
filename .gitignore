@@ -4,3 +4,5 @@ build/
 *.map
 *.log
 *.d.ts
+*.sqlite
+
