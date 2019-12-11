@@ -26,16 +26,16 @@ export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>
       if (ev.version === version) throw new VersionError()
     }
 
-    events.push({
+    const storeEvent: StoreEvent<E> = {
       stream,
       event,
       version,
       position: ++position,
       aggregateId,
       timestamp: new Date(Date.now()),
-    })
-
-    return
+    }
+    events.push(storeEvent)
+    return storeEvent
   }
 
   return {

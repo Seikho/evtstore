@@ -59,9 +59,27 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
     },
     append: async (stream, event, aggregateId, version) => {
       try {
-        await opts
-          .events()
-          .insert({ stream, event: JSON.stringify(event), aggregate_id: aggregateId, version })
+        const storeEvent: StoreEvent<E> = {
+          stream,
+          event,
+          aggregateId,
+          version,
+          position: 0,
+          timestamp: new Date(Date.now()),
+        }
+        const [result] = await opts.events().insert(
+          {
+            stream: storeEvent.stream,
+            aggregate_id: storeEvent.aggregateId,
+            event: JSON.stringify(event),
+            version: storeEvent.version,
+            timestamp: storeEvent.timestamp,
+          },
+          ['position']
+        )
+
+        storeEvent.position = result[0]
+        return storeEvent
       } catch (ex) {
         // TODO: Verify version conflict error
         throw new VersionError()

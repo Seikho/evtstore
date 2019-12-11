@@ -39,16 +39,16 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
       const position = new Timestamp(0, 0)
 
       try {
-        await events.then(coll =>
-          coll.insertOne({
-            stream,
-            position,
-            version,
-            timestamp,
-            event,
-            aggregateId,
-          })
-        )
+        const toStore: StoreEvent<E> = {
+          stream,
+          position,
+          version,
+          timestamp,
+          event,
+          aggregateId,
+        }
+        await events.then(coll => coll.insertOne(toStore))
+        return toStore
       } catch (ex) {
         if (ex instanceof MongoError && ex.code === 11000) throw new VersionError()
         throw ex

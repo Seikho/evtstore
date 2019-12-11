@@ -28,7 +28,7 @@ export type Provider<Evt extends Event> = {
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string, position: any): Promise<Array<StoreEvent<Evt>>>
   getEventsFor(stream: string, aggregateId: string): Promise<Array<StoreEvent<Evt>>>
-  append(stream: string, event: Evt, aggregateId: string, version: number): Promise<void>
+  append(stream: string, event: Evt, aggregateId: string, version: number): Promise<StoreEvent<Evt>>
 }
 
 export type Handler<E extends Event> = {
@@ -49,17 +49,17 @@ export type Ext<E extends Event, T extends E['type']> = E extends {
   : never
 
 export type CommandHandler<E extends Event, A extends Aggregate, C extends Command> = {
-  [key in C['type']]: (cmd: ExtCmd<C, key> & ID, agg: A) => Promise<(E) | void>
+  [key in C['type']]: (cmd: ExtCmd<C, key> & ID, agg: A) => Promise<E | E[] | void>
 }
 
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
   handler(bookmark: string): Handler<E>
-  command: CmdBody<C>
+  command: CmdBody<C, A>
   getAggregate(id: string): Promise<A & BaseAggregate>
 }
 
 export type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
 
-export type CmdBody<C extends Command> = {
-  [cmd in C['type']]: (aggId: string, body: ExtCmd<C, cmd>) => Promise<void>
+export type CmdBody<C extends Command, A extends Aggregate> = {
+  [cmd in C['type']]: (aggId: string, body: ExtCmd<C, cmd>) => Promise<A & BaseAggregate>
 }

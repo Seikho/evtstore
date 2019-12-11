@@ -10,10 +10,10 @@ type Model = {
 }
 
 type InputFn = (
-  cmd: CmdBody<ExampleCmd>,
+  cmd: CmdBody<ExampleCmd, ExampleAgg>,
   hnd: Handler<ExampleEv>,
   prv: Provider<ExampleEv>
-) => Promise<void>
+) => Promise<ExampleAgg | void>
 
 interface Test {
   will: string
@@ -80,7 +80,7 @@ export const tests: Test[] = [
 ]
 
 type TestDomain = {
-  command: CmdBody<ExampleCmd>
+  command: CmdBody<ExampleCmd, ExampleAgg>
   getAggregate: (id: string) => Promise<ExampleAgg & BaseAggregate>
   models: Map<string, Model>
   populator: Handler<ExampleEv>
