@@ -5,7 +5,7 @@ import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './ex
 
 const { command, getAggregate, handler } = createDomain<ExampleEv, ExampleAgg, ExampleCmd>(
   {
-    aggregate: () => ({ one: 0, two: '', three: [] }),
+    aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
     fold: exampleFold,
     provider: createProvider(),
     stream: 'example',
@@ -57,6 +57,7 @@ describe('in memory provider::commands', () => {
       one: 1,
       two: 'two',
       three: [],
+      multi: 0,
       version: 2,
     })
   })

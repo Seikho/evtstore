@@ -77,6 +77,32 @@ export const tests: Test[] = [
       expect(threw, 'throws on version conflict').to.equal(true)
     },
   },
+  {
+    will: 'return correct aggregate from command',
+    input: [],
+    assert: async cmd => {
+      const aggregateId = 'returned-agg'
+
+      const first = await cmd.doOne(aggregateId, { one: 1 })
+      expect(first).to.include({ version: 1, aggregateId, one: 1 })
+
+      const second = await cmd.doOne(aggregateId, { one: 2 })
+      expect(second).to.include({ version: 2, aggregateId, one: 2 })
+    },
+  },
+  {
+    will: 'handle returning multiple events',
+    input: [],
+    assert: async cmd => {
+      const aggregateId = 'multi-agg'
+
+      const first = await cmd.doMulti(aggregateId, { multi: 1 })
+      expect(first).to.include({ version: 2, multi: 2 })
+
+      const second = await cmd.doMulti(aggregateId, { multi: 2 })
+      expect(second).to.include({ version: 4, multi: 6 })
+    },
+  },
 ]
 
 type TestDomain = {
@@ -92,7 +118,7 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
   const { command, getAggregate, handler } = createDomain(
     {
       provider,
-      aggregate: () => ({ one: 0, two: '', three: [] }),
+      aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
       fold: exampleFold,
       stream: `${name}-example`,
     },
