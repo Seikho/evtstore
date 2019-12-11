@@ -52,7 +52,7 @@ To obtain these goals the design is highly opinionated, but still flexible.
 
 ## Examples
 
-Some examples are available in the `test/` folder
+Some examples are available in the `src/test/provider.spec.ts` module
 
 ## Sample
 
@@ -123,15 +123,23 @@ userPopulator.handle('NameChanged', async (aggregateId, event) => {
 userPopulator.start()
 
 async function example() {
+  // Execute a command without the aggregate first
   await userDomain.command.createUser('my-user', {})
   await userDomain.command.changeName('my-user', { name: 'my name' })
+
+  // Execute a command against an aggregate
+  const user = await userdomain.getAggregate('my-user')
+  if (user.aggregate.version === 0) {
+    throw new Error('User does not exist')
+  }
+
+  await user.changeName({ name: 'new name' })
 }
 ```
 
 ## TODO
 
 - Logging
-- SQL provider
 
 ## License
 
