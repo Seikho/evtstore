@@ -63,9 +63,9 @@ export const tests: Test[] = [
     input: [],
     assert: async (_, prv) => {
       let threw = false
-      await prv.append(prv.driver, { example: 42 } as any, 'conflict-id', 1)
+      await prv.append(prv.driver, 'conflict-id', 1, [{ example: 42 } as any])
       try {
-        await prv.append(prv.driver, { example: 42 } as any, 'conflict-id', 1)
+        await prv.append(prv.driver, 'conflict-id', 1, [{ example: 42 } as any])
         threw = false
       } catch (ex) {
         threw = true

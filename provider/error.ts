@@ -5,7 +5,8 @@ export class CommandError extends Error {
 }
 
 export class VersionError extends CommandError {
-  constructor() {
-    super('Version conflict error', 'VERSION_CONFLICT')
+  constructor(msg?: string) {
+    const suffix = msg ? `: ${msg}` : ''
+    super(`Version conflict error${suffix}`, 'VERSION_CONFLICT')
   }
 }

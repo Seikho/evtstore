@@ -20,22 +20,23 @@ export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>
     return events.filter(ev => ev.stream === stream && ev.aggregateId === id)
   }
 
-  const append = async (stream: string, event: E, aggregateId: string, version: number) => {
+  const append = async (stream: string, aggregateId: string, version: number, newEvents: E[]) => {
     const aggEvents = await getEventsFor(stream, aggregateId)
     for (const ev of aggEvents) {
       if (ev.version === version) throw new VersionError()
     }
 
-    const storeEvent: StoreEvent<E> = {
+    const storeEvents: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
       stream,
       event,
-      version,
+      version: version + i,
       position: ++position,
       aggregateId,
       timestamp: new Date(Date.now()),
-    }
-    events.push(storeEvent)
-    return storeEvent
+    }))
+
+    events.push(...storeEvents)
+    return storeEvents
   }
 
   return {

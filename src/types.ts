@@ -28,7 +28,12 @@ export type Provider<Evt extends Event> = {
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string, position: any): Promise<Array<StoreEvent<Evt>>>
   getEventsFor(stream: string, aggregateId: string): Promise<Array<StoreEvent<Evt>>>
-  append(stream: string, event: Evt, aggregateId: string, version: number): Promise<StoreEvent<Evt>>
+  append(
+    stream: string,
+    aggregateId: string,
+    version: number,
+    event: Evt[]
+  ): Promise<Array<StoreEvent<Evt>>>
 }
 
 export type Handler<E extends Event> = {
@@ -58,6 +63,7 @@ export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
   getAggregate(
     id: string
   ): Promise<ExecutableAggregate<C, A> & { aggregate: Readonly<A & BaseAggregate> }>
+  retry?: boolean
 }
 
 export type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>

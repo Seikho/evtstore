@@ -93,13 +93,11 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     if (cmdResult) {
       const events = Array.isArray(cmdResult) ? cmdResult : [cmdResult]
       const provider = await providerAsync
-      let nextVersion = aggregate.version
+      let nextVersion = aggregate.version + 1
 
-      for (const event of events) {
-        nextVersion++
-        const storeEvent = await provider.append(opts.stream, event, id, nextVersion)
-        nextAggregate = toNextAggregate(nextAggregate, storeEvent)
-      }
+      const storeEvents = await provider.append(opts.stream, id, nextVersion, events)
+      const nextAggregate = storeEvents.reduce(toNextAggregate, aggregate)
+      return nextAggregate
     }
 
     return nextAggregate

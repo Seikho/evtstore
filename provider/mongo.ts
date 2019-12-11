@@ -34,20 +34,20 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
           .sort({ position: 1 })
           .toArray()
       ),
-    append: async (stream, event, aggregateId, version) => {
+    append: async (stream, aggregateId, version, newEvents) => {
       const timestamp = new Date(Date.now())
-      const position = new Timestamp(0, 0)
 
       try {
-        const toStore: StoreEvent<E> = {
+        const toStore: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
           stream,
-          position,
-          version,
+          position: new Timestamp(0, 0),
+          version: version + i,
           timestamp,
           event,
           aggregateId,
-        }
-        await events.then(coll => coll.insertOne(toStore))
+        }))
+
+        await events.then(coll => coll.insertMany(toStore))
         return toStore
       } catch (ex) {
         if (ex instanceof MongoError && ex.code === 11000) throw new VersionError()
