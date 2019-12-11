@@ -9,6 +9,7 @@ import {
   CommandHandler,
   StoreEvent,
   BaseAggregate,
+  ExecutableAggregate,
 } from './types'
 import { EventHandler } from './handler'
 import { toMeta } from './common'
@@ -46,38 +47,65 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
   const command: CmdBody<C, A & BaseAggregate> = {} as any
   const providerAsync = Promise.resolve(opts.provider)
 
+  if ('aggregate' in cmd) {
+    throw new Error(`Invalid command body: Command handler function cannot be named "aggregate"`)
+  }
+
   async function getAggregate(id: string) {
     const provider = await providerAsync
     const events = await provider.getEventsFor(opts.stream, id)
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
-    const agg = events.reduce(reduceToAggregate, next)
+    const agg = events.reduce(toNextAggregate, next)
     return agg
   }
 
+  async function getExecAggregate(id: string) {
+    const aggregate = await getAggregate(id)
+    const body: ExecutableAggregate<C, A> = {} as any
+
+    for (const type of keys) {
+      body[type] = async cmdBody => {
+        const cmdResult = await cmd[type]({ ...cmdBody, aggregateId: id }, aggregate)
+        const nextAggregate = await handleCommandResult(cmdResult, aggregate)
+
+        return { ...body, aggregate: nextAggregate }
+      }
+    }
+
+    return { ...body, aggregate }
+  }
+
+  // Prepare the command handlers that accept an aggregateId and a command body
   for (const type of keys) {
     command[type] = async (id, body) => {
       const agg = await getAggregate(id)
 
       const cmdResult = await cmd[type]({ ...body, aggregateId: id }, agg)
-      let nextAggregate = { ...agg }
-
-      if (cmdResult) {
-        const events = Array.isArray(cmdResult) ? cmdResult : [cmdResult]
-        const provider = await providerAsync
-        let nextVersion = agg.version
-
-        for (const event of events) {
-          nextVersion++
-          const storeEvent = await provider.append(opts.stream, event, id, nextVersion)
-          nextAggregate = reduceToAggregate(nextAggregate, storeEvent)
-        }
-      }
-
+      const nextAggregate = await handleCommandResult(cmdResult, agg)
       return nextAggregate
     }
   }
 
-  function reduceToAggregate(next: A, ev: StoreEvent<E>): A & BaseAggregate {
+  async function handleCommandResult(cmdResult: E | E[] | void, aggregate: A & BaseAggregate) {
+    const id = aggregate.aggregateId
+    let nextAggregate = { ...aggregate }
+
+    if (cmdResult) {
+      const events = Array.isArray(cmdResult) ? cmdResult : [cmdResult]
+      const provider = await providerAsync
+      let nextVersion = aggregate.version
+
+      for (const event of events) {
+        nextVersion++
+        const storeEvent = await provider.append(opts.stream, event, id, nextVersion)
+        nextAggregate = toNextAggregate(nextAggregate, storeEvent)
+      }
+    }
+
+    return nextAggregate
+  }
+
+  function toNextAggregate(next: A, ev: StoreEvent<E>): A & BaseAggregate {
     return {
       ...next,
       ...opts.fold(ev.event, next, toMeta(ev)),
@@ -86,5 +114,5 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     }
   }
 
-  return { command, getAggregate }
+  return { command, getAggregate: getExecAggregate }
 }

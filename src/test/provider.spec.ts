@@ -27,26 +27,26 @@ describe('provider tests', () => {
     describe(`::${name}`, () => {
       for (const { will, input, agg, model, assert } of tests) {
         it(`${name}::${will}`, async () => {
-          const { command, getAggregate, models, populator } = getDomain(name)!
+          const domain = getDomain(name)!
           const provider = await providers[name]
           for (const func of input) {
-            await func(command, populator, provider)
+            await func(domain, provider)
           }
 
           if (agg) {
-            const actual = await getAggregate(agg.id)
-            match(agg, actual)
+            const actual = await domain.getAggregate(agg.id)
+            match(agg, actual.aggregate)
           }
 
           if (model) {
-            await populator.runOnce()
-            const actual = models.get(model.id)
+            await domain.populator.runOnce()
+            const actual = domain.models.get(model.id)
             expect(actual, 'read model exists').to.exist
             match(model, actual)
           }
 
           if (assert) {
-            await assert(command, populator, provider)
+            await assert(domain, provider)
           }
         })
       }
@@ -92,6 +92,11 @@ async function createSqliteMemory() {
     client: 'sqlite3',
     connection: ':memory:',
     useNullAsDefault: true,
+    log: {
+      warn(_msg: any) {},
+      deprecate(_msg: any) {},
+      debug(_msg: any) {},
+    },
   })
 
   await sql.migrate({ client: db, events: 'events', bookmarks: 'bookmarks' })
@@ -112,6 +117,11 @@ async function createSqliteFile() {
     client: 'sqlite3',
     connection: 'test.sqlite',
     useNullAsDefault: true,
+    log: {
+      warn(_msg: any) {},
+      deprecate(_msg: any) {},
+      debug(_msg: any) {},
+    },
   })
 
   await sql.migrate({ client: db, events: 'events', bookmarks: 'bookmarks' })

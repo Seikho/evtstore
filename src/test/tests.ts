@@ -1,4 +1,4 @@
-import { CmdBody, Handler, Provider } from '../types'
+import { Handler, Provider, Domain } from '../types'
 import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 import { BaseAggregate } from '../types'
 import { createDomain } from '../domain'
@@ -9,11 +9,7 @@ type Model = {
   seen: number
 }
 
-type InputFn = (
-  cmd: CmdBody<ExampleCmd, ExampleAgg>,
-  hnd: Handler<ExampleEv>,
-  prv: Provider<ExampleEv>
-) => Promise<ExampleAgg | void>
+type InputFn = (domain: TestDomain, provider: Provider<ExampleEv>) => Promise<ExampleAgg | void>
 
 interface Test {
   will: string
@@ -26,12 +22,12 @@ interface Test {
 export const tests: Test[] = [
   {
     will: 'append an event',
-    input: [cmd => cmd.doOne('one', { one: 42 })],
+    input: [({ command }) => command.doOne('one', { one: 42 })],
     agg: { id: 'one', one: 42, version: 1 },
   },
   {
     will: 'append another event',
-    input: [cmd => cmd.doOne('one', { one: 84 })],
+    input: [({ command }) => command.doOne('one', { one: 84 })],
     agg: { id: 'one', one: 84, version: 2 },
   },
   {
@@ -45,7 +41,7 @@ export const tests: Test[] = [
   },
   {
     will: 'append event to new aggregate',
-    input: [cmd => cmd.doOne('two', { one: 100 })],
+    input: [({ command }) => command.doOne('two', { one: 100 })],
     agg: { id: 'two', one: 100, version: 1 },
   },
   {
@@ -57,7 +53,7 @@ export const tests: Test[] = [
   {
     will: 'fetch a bookmark without pre-existing',
     input: [],
-    assert: async (_, __, prv) => {
+    assert: async (_, prv) => {
       const bm = await prv.getPosition('undefined')
       expect(bm).to.exist
     },
@@ -65,7 +61,7 @@ export const tests: Test[] = [
   {
     will: 'throw on version conflict',
     input: [],
-    assert: async (_, __, prv) => {
+    assert: async (_, prv) => {
       let threw = false
       await prv.append(prv.driver, { example: 42 } as any, 'conflict-id', 1)
       try {
@@ -80,42 +76,59 @@ export const tests: Test[] = [
   {
     will: 'return correct aggregate from command',
     input: [],
-    assert: async cmd => {
+    assert: async ({ command }) => {
       const aggregateId = 'returned-agg'
 
-      const first = await cmd.doOne(aggregateId, { one: 1 })
+      const first = await command.doOne(aggregateId, { one: 1 })
       expect(first).to.include({ version: 1, aggregateId, one: 1 })
 
-      const second = await cmd.doOne(aggregateId, { one: 2 })
+      const second = await command.doOne(aggregateId, { one: 2 })
       expect(second).to.include({ version: 2, aggregateId, one: 2 })
     },
   },
   {
     will: 'handle returning multiple events',
     input: [],
-    assert: async cmd => {
+    assert: async ({ command }) => {
       const aggregateId = 'multi-agg'
 
-      const first = await cmd.doMulti(aggregateId, { multi: 1 })
+      const first = await command.doMulti(aggregateId, { multi: 1 })
       expect(first).to.include({ version: 2, multi: 2 })
 
-      const second = await cmd.doMulti(aggregateId, { multi: 2 })
+      const second = await command.doMulti(aggregateId, { multi: 2 })
       expect(second).to.include({ version: 4, multi: 6 })
+    },
+  },
+  {
+    will: 'return valid aggregate using executable aggregate',
+    input: [],
+    assert: async ({ getAggregate }) => {
+      const first = await getAggregate('multi-agg')
+      expect(first.aggregate).to.include({ version: 4, multi: 6 })
+
+      const second = await first.doMulti({ multi: 1 })
+      expect(second.aggregate).to.include({ version: 6, multi: 8 })
+    },
+  },
+  {
+    will: 'return empty aggregate',
+    input: [],
+    assert: async ({ getAggregate }) => {
+      const actual = await getAggregate('unused-aggregate')
+      expect(actual.aggregate).to.deep.include({ version: 0, one: 0, two: '', three: [], multi: 0 })
     },
   },
 ]
 
 type TestDomain = {
-  command: CmdBody<ExampleCmd, ExampleAgg>
-  getAggregate: (id: string) => Promise<ExampleAgg & BaseAggregate>
   models: Map<string, Model>
   populator: Handler<ExampleEv>
-}
+} & Domain<ExampleEv, ExampleAgg, ExampleCmd>
 
 const domains = new Map<string, TestDomain>()
 
 export function registerTestDomain(name: string, provider: Provider<ExampleEv>) {
-  const { command, getAggregate, handler } = createDomain(
+  const domain = createDomain(
     {
       provider,
       aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
@@ -127,7 +140,7 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
 
   const models = new Map<string, Model>()
 
-  const populator = handler(`${name}-example`)
+  const populator = domain.handler(`${name}-example`)
   populator.handle('one', async (id, ev) => {
     const model = models.get(id) || { one: 0, seen: 0 }
     model.seen++
@@ -135,7 +148,7 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
     models.set(id, model)
   })
 
-  domains.set(name, { command, getAggregate, models, populator })
+  domains.set(name, { models, populator, ...domain })
   return
 }
 

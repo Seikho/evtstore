@@ -55,11 +55,19 @@ export type CommandHandler<E extends Event, A extends Aggregate, C extends Comma
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
   handler(bookmark: string): Handler<E>
   command: CmdBody<C, A>
-  getAggregate(id: string): Promise<A & BaseAggregate>
+  getAggregate(
+    id: string
+  ): Promise<ExecutableAggregate<C, A> & { aggregate: Readonly<A & BaseAggregate> }>
 }
 
 export type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
 
 export type CmdBody<C extends Command, A extends Aggregate> = {
   [cmd in C['type']]: (aggId: string, body: ExtCmd<C, cmd>) => Promise<A & BaseAggregate>
+}
+
+export type ExecutableAggregate<C extends Command, A extends Aggregate> = {
+  [cmd in C['type']]: (
+    body: ExtCmd<C, cmd>
+  ) => Promise<ExecutableAggregate<C, A> & { aggregate: Readonly<A & BaseAggregate> }>
 }
