@@ -54,7 +54,7 @@ export type Ext<E extends Event, T extends E['type']> = E extends {
   : never
 
 export type CommandHandler<E extends Event, A extends Aggregate, C extends Command> = {
-  [key in C['type']]: (cmd: ExtCmd<C, key> & ID, agg: A) => Promise<E | E[] | void>
+  [key in C['type']]: (cmd: ExtCmd<C, key> & ID, agg: A & BaseAggregate) => Promise<E | E[] | void>
 }
 
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
