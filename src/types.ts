@@ -54,7 +54,7 @@ export type Ext<E extends Event, T extends E['type']> = E extends {
   : never
 
 export type CommandHandler<E extends Event, A extends Aggregate, C extends Command> = {
-  [key in C['type']]: (cmd: ExtCmd<C, key> & ID, agg: A & BaseAggregate) => Promise<E | E[] | void>
+  [key in C['type']]: (cmd: OptCmd<C, key> & ID, agg: A & BaseAggregate) => Promise<E | E[] | void>
 }
 
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
@@ -66,8 +66,6 @@ export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
   retry?: boolean
 }
 
-export type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
-
 export type CmdBody<C extends Command, A extends Aggregate> = {
   [cmd in C['type']]: (aggId: string, body: ExtCmd<C, cmd>) => Promise<A & BaseAggregate>
 }
@@ -77,3 +75,7 @@ export type ExecutableAggregate<C extends Command, A extends Aggregate> = {
     body: ExtCmd<C, cmd>
   ) => Promise<ExecutableAggregate<C, A> & { aggregate: Readonly<A & BaseAggregate> }>
 }
+
+type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
+
+type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & { type?: T }

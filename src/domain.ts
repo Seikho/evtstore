@@ -65,7 +65,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
 
     for (const type of keys) {
       body[type] = async cmdBody => {
-        const cmdResult = await cmd[type]({ ...cmdBody, aggregateId: id }, aggregate)
+        const cmdResult = await cmd[type]({ ...cmdBody, aggregateId: id, type }, aggregate)
         const nextAggregate = await handleCommandResult(cmdResult, aggregate)
 
         return { ...body, aggregate: nextAggregate }
@@ -80,7 +80,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     command[type] = async (id, body) => {
       const agg = await getAggregate(id)
 
-      const cmdResult = await cmd[type]({ ...body, aggregateId: id }, agg)
+      const cmdResult = await cmd[type]({ ...body, aggregateId: id, type }, agg)
       const nextAggregate = await handleCommandResult(cmdResult, agg)
       return nextAggregate
     }

@@ -1,6 +1,6 @@
 {
   "name": "evtstore",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
@@ -47,7 +47,7 @@
     "pg": "^7.12.1",
     "rimraf": "^3.0.0",
     "sqlite3": "^4.1.0",
-    "typescript": "3.7"
+    "typescript": "^3.7.3"
   },
   "types": "index.d.ts"
 }
