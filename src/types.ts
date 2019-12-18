@@ -18,7 +18,7 @@ export type BaseAggregate = { version: number; aggregateId: string }
 
 export type Fold<E extends Event, A extends Aggregate> = (
   ev: E,
-  agg: A,
+  agg: A & BaseAggregate,
   meta: EventMeta
 ) => Partial<A>
 

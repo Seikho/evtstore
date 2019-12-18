@@ -103,7 +103,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     return nextAggregate
   }
 
-  function toNextAggregate(next: A, ev: StoreEvent<E>): A & BaseAggregate {
+  function toNextAggregate(next: A & BaseAggregate, ev: StoreEvent<E>): A & BaseAggregate {
     return {
       ...next,
       ...opts.fold(ev.event, next, toMeta(ev)),
