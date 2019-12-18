@@ -4,7 +4,8 @@ export type EvOne = { type: 'one'; one: number }
 export type EvTwo = { type: 'two'; two: string }
 export type EvThree = { type: 'three'; three: number[] }
 export type EvMulti = { type: 'multi'; multi: number }
-export type ExampleEv = EvOne | EvTwo | EvThree | EvMulti
+export type EvVersion = { type: 'version' }
+export type ExampleEv = EvOne | EvTwo | EvThree | EvMulti | EvVersion
 
 export type ExampleAgg = { one: number; two: string; three: number[]; multi: number }
 
@@ -21,6 +22,9 @@ export function exampleFold(ev: ExampleEv, agg: ExampleAgg): Partial<ExampleAgg>
 
     case 'multi':
       return { multi: ev.multi + agg.multi }
+
+    case 'version':
+      return {}
   }
 }
 
@@ -28,8 +32,9 @@ export type DoOne = { type: 'doOne'; one: number }
 export type DoTwo = { type: 'doTwo'; two: string }
 export type DoThree = { type: 'doThree'; three: number[] }
 export type DoMulti = { type: 'doMulti'; multi: number }
+export type DoVersion = { type: 'doVersion' }
 
-export type ExampleCmd = DoOne | DoTwo | DoThree | DoMulti
+export type ExampleCmd = DoOne | DoTwo | DoThree | DoMulti | DoVersion
 
 export const exampleCmd: CommandHandler<ExampleEv, ExampleAgg, ExampleCmd> = {
   async doOne(cmd, _agg) {
@@ -46,5 +51,9 @@ export const exampleCmd: CommandHandler<ExampleEv, ExampleAgg, ExampleCmd> = {
       { type: 'multi', multi: cmd.multi },
       { type: 'multi', multi: cmd.multi },
     ]
+  },
+  async doVersion(_, agg) {
+    if (agg.version === 0) throw new Error('Non-zero version')
+    return { type: 'version' }
   },
 }

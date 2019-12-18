@@ -118,6 +118,14 @@ export const tests: Test[] = [
       expect(actual.aggregate).to.deep.include({ version: 0, one: 0, two: '', three: [], multi: 0 })
     },
   },
+  {
+    will: 'have non-zero version in command handler',
+    input: [],
+    assert: async ({ command }) => {
+      await command.doOne('non-zero', { one: 1 })
+      await command.doVersion('non-zero', {})
+    },
+  },
 ]
 
 type TestDomain = {
