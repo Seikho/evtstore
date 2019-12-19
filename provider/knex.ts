@@ -133,5 +133,4 @@ function mapToEvent<E extends Event>(row: any): StoreEvent<E> {
     timestamp: row.timestamp,
     version: row.version,
   }
-  return row
 }
