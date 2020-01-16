@@ -1,6 +1,6 @@
 {
   "name": "evtstore",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
@@ -31,7 +31,6 @@
   },
   "homepage": "https://github.com/seikho/evtstore#readme",
   "dependencies": {
-    "@types/knex": "^0.16.1",
     "@types/mongodb": "^3.3.6",
     "@types/sqlite3": "^3.1.5"
   },
