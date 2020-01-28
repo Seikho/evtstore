@@ -1,5 +1,5 @@
 import * as knex from 'knex'
-import { Event, Provider, StoreEvent } from '../src/types'
+import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 
 export type Bookmark = {
@@ -14,7 +14,7 @@ export type MigrateOptions = {
 }
 
 export type Options = {
-  onError?: (err: any, strean: string) => void
+  onError?: ErrorCallback
   bookmarks: () => knex.QueryBuilder<any, any>
   events: () => knex.QueryBuilder<any, any>
 }

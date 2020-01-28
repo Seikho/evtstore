@@ -12,6 +12,8 @@ export type EventMeta = {
   aggregateId: string
 }
 
+export type ErrorCallback = (err: any, stream: string, bookmark: string) => any
+
 type ID = { aggregateId: string }
 
 export type BaseAggregate = { version: number; aggregateId: string }
@@ -24,7 +26,7 @@ export type Fold<E extends Event, A extends Aggregate> = (
 
 export type Provider<Evt extends Event> = {
   driver: string
-  onError: (err: any, stream: string) => void
+  onError: ErrorCallback
   getPosition(bookmark: string): Promise<any>
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string, position: any): Promise<Array<StoreEvent<Evt>>>

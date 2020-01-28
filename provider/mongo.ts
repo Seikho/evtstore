@@ -1,5 +1,5 @@
 import { Collection, Timestamp, MongoError } from 'mongodb'
-import { Event, StoreEvent, Provider } from '../src/types'
+import { Event, StoreEvent, Provider, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 
 export type Bookmark = {
@@ -10,7 +10,7 @@ export type Bookmark = {
 export type Options<E extends Event> = {
   events: Collection<StoreEvent<E>> | Promise<Collection<StoreEvent<E>>>
   bookmarks: Collection<Bookmark> | Promise<Collection<Bookmark>>
-  onError?: (err: any, stream: string) => void
+  onError?: ErrorCallback
 }
 
 export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {

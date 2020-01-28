@@ -1,9 +1,9 @@
-import { Event, Provider, StoreEvent } from '../src/types'
+import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 
 export function createProvider<E extends Event>(
   initEvents?: Array<StoreEvent<E>>,
-  onError = (_err: any, _stream: string) => {}
+  onError: ErrorCallback = () => {}
 ): Provider<E> {
   const events: Array<StoreEvent<E>> = initEvents || []
   const bms = new Map<string, number>()
