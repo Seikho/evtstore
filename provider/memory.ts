@@ -3,7 +3,7 @@ import { VersionError } from './error'
 
 export function createProvider<E extends Event>(
   initEvents?: Array<StoreEvent<E>>,
-  onError = () => {}
+  onError = (_err: any, _stream: string) => {}
 ): Provider<E> {
   const events: Array<StoreEvent<E>> = initEvents || []
   const bms = new Map<string, number>()

@@ -14,7 +14,7 @@ export type MigrateOptions = {
 }
 
 export type Options = {
-  onError?: (err: any) => void
+  onError?: (err: any, strean: string) => void
   bookmarks: () => knex.QueryBuilder<any, any>
   events: () => knex.QueryBuilder<any, any>
 }

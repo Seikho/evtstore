@@ -24,7 +24,7 @@ export type Fold<E extends Event, A extends Aggregate> = (
 
 export type Provider<Evt extends Event> = {
   driver: string
-  onError: (err: any) => void
+  onError: (err: any, stream: string) => void
   getPosition(bookmark: string): Promise<any>
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string, position: any): Promise<Array<StoreEvent<Evt>>>

@@ -74,7 +74,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
       const handled = await this.runOnce()
       setTimeout(this.run, handled === 0 ? POLL : 0)
     } catch (ex) {
-      await this.provider.then(prv => prv.onError(ex))
+      await this.provider.then(prv => prv.onError(ex, this.stream))
       setTimeout(this.run, CRASH)
     }
   }

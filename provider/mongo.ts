@@ -10,7 +10,7 @@ export type Bookmark = {
 export type Options<E extends Event> = {
   events: Collection<StoreEvent<E>> | Promise<Collection<StoreEvent<E>>>
   bookmarks: Collection<Bookmark> | Promise<Collection<Bookmark>>
-  onError?: (err: any) => void
+  onError?: (err: any, stream: string) => void
 }
 
 export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
