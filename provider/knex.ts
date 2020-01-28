@@ -109,8 +109,8 @@ export async function migrate(opts: MigrateOptions) {
         })
 
         await trx.schema.table(opts.events, tbl => {
-          tbl.unique(['stream', 'position'], 'stream_position_index')
-          tbl.unique(['stream', 'aggregate_id', 'version'], 'stream_id_version')
+          tbl.unique(['stream', 'position'])
+          tbl.unique(['stream', 'aggregate_id', 'version'])
         })
       }
     }
