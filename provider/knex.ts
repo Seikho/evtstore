@@ -9,8 +9,8 @@ export type Bookmark = {
 
 export type MigrateOptions = {
   client: knex
-  events: string
-  bookmarks: string
+  events?: string
+  bookmarks?: string
 }
 
 export type Options = {
@@ -93,31 +93,37 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 }
 
 export async function migrate(opts: MigrateOptions) {
+  if (!opts.bookmarks && !opts.events) return
+
   await opts.client.transaction(async trx => {
-    const eventsExists = await trx.schema.hasTable(opts.events)
-    const bookmarkExists = await trx.schema.hasTable(opts.bookmarks)
+    if (opts.events) {
+      const eventsExists = await trx.schema.hasTable(opts.events)
+      if (!eventsExists) {
+        await trx.schema.createTable(opts.events, tbl => {
+          tbl.bigIncrements('position').primary()
+          tbl.integer('version')
+          tbl.string('stream')
+          tbl.string('aggregate_id')
+          tbl.dateTime('timestamp')
+          tbl.text('event')
+        })
 
-    if (!eventsExists) {
-      await trx.schema.createTable(opts.events, tbl => {
-        tbl.bigIncrements('position').primary()
-        tbl.integer('version')
-        tbl.string('stream')
-        tbl.string('aggregate_id')
-        tbl.dateTime('timestamp')
-        tbl.text('event')
-      })
-
-      await trx.schema.table(opts.events, tbl => {
-        tbl.unique(['stream', 'position'], 'stream_position_index')
-        tbl.unique(['stream', 'aggregate_id', 'version'], 'stream_id_version')
-      })
+        await trx.schema.table(opts.events, tbl => {
+          tbl.unique(['stream', 'position'], 'stream_position_index')
+          tbl.unique(['stream', 'aggregate_id', 'version'], 'stream_id_version')
+        })
+      }
     }
 
-    if (!bookmarkExists) {
-      await trx.schema.createTable(opts.bookmarks, tbl => {
-        tbl.string('bookmark').primary()
-        tbl.bigInteger('position')
-      })
+    if (opts.bookmarks) {
+      const bookmarkExists = await trx.schema.hasTable(opts.bookmarks)
+
+      if (!bookmarkExists) {
+        await trx.schema.createTable(opts.bookmarks, tbl => {
+          tbl.string('bookmark').primary()
+          tbl.bigInteger('position')
+        })
+      }
     }
 
     await trx.commit()
