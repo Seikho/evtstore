@@ -31,12 +31,12 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       return 0
     },
     setPosition: async (bm, pos) => {
-      try {
-        await opts
-          .bookmarks()
-          .update({ position: pos })
-          .where('bookmark', bm)
-      } catch (ex) {
+      const updates = await opts
+        .bookmarks()
+        .update({ position: pos })
+        .where('bookmark', bm)
+
+      if (updates === 0) {
         await opts.bookmarks().insert({ bookmark: bm, position: pos })
       }
     },
