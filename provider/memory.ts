@@ -1,7 +1,10 @@
 import { Event, Provider, StoreEvent } from '../src/types'
 import { VersionError } from './error'
 
-export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>>): Provider<E> {
+export function createProvider<E extends Event>(
+  initEvents?: Array<StoreEvent<E>>,
+  onError = () => {}
+): Provider<E> {
   const events: Array<StoreEvent<E>> = initEvents || []
   const bms = new Map<string, number>()
   let position = 0
@@ -41,6 +44,7 @@ export function createProvider<E extends Event>(initEvents?: Array<StoreEvent<E>
 
   return {
     driver: 'memory',
+    onError,
     getPosition,
     setPosition,
     getEventsFor,

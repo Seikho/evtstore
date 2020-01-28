@@ -14,13 +14,20 @@ export type MigrateOptions = {
 }
 
 export type Options = {
+  onError?: (err: any) => void
   bookmarks: () => knex.QueryBuilder<any, any>
   events: () => knex.QueryBuilder<any, any>
 }
 
 export function createProvider<E extends Event>(opts: Options): Provider<E> {
+  const onError =
+    opts.onError ||
+    (() => {
+      /* NOOP */
+    })
   return {
     driver: 'knex',
+    onError,
     getPosition: async bm => {
       const result = await opts
         .bookmarks()

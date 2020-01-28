@@ -10,14 +10,21 @@ export type Bookmark = {
 export type Options<E extends Event> = {
   events: Collection<StoreEvent<E>> | Promise<Collection<StoreEvent<E>>>
   bookmarks: Collection<Bookmark> | Promise<Collection<Bookmark>>
+  onError?: (err: any) => void
 }
 
 export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
   const events = Promise.resolve(opts.events)
   const bookmarks = Promise.resolve(opts.bookmarks)
+  const onError =
+    opts.onError ||
+    (() => {
+      /* NOOP */
+    })
 
   return {
     driver: 'mongo',
+    onError,
     getPosition: bm => getPos(bm, bookmarks),
     setPosition: (bm, pos) => setPos(bm, pos, bookmarks),
     getEventsFor: async (stream, id) =>
