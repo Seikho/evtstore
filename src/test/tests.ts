@@ -3,6 +3,7 @@ import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './ex
 import { BaseAggregate } from '../types'
 import { createDomain } from '../domain'
 import { expect } from 'chai'
+import { MemoryBookmark } from '../common'
 
 type Model = {
   one: number
@@ -124,6 +125,24 @@ export const tests: Test[] = [
     assert: async ({ command }) => {
       await command.doOne('non-zero', { one: 1 })
       await command.doVersion('non-zero', {})
+    },
+  },
+  {
+    will: 'correctly use in-memory bookmark',
+    input: [],
+    assert: async ({ handler, command }) => {
+      let count = 0
+      const pop = handler(MemoryBookmark)
+      pop.handle('one', async () => {
+        ++count
+      })
+      await pop.runOnce()
+      expect(count).to.equal(6)
+      await pop.runOnce()
+      expect(count).to.equal(6)
+      await command.doOne('in-memory', { one: 1 })
+      await pop.runOnce()
+      expect(count).to.equal(7)
     },
   },
 ]
