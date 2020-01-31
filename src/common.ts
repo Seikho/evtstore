@@ -9,3 +9,5 @@ export function toMeta(ev: StoreEvent<any>): EventMeta {
     version: ev.version,
   }
 }
+
+export const MemoryBookmark = '@@MemoryBookmark'

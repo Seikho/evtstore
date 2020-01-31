@@ -1,5 +1,5 @@
 import { Event, Provider, Ext, Handler, EventMeta } from './types'
-import { toMeta } from './common'
+import { toMeta, MemoryBookmark } from './common'
 
 const POLL = 1000
 const CRASH = 10000
@@ -47,7 +47,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
   runOnce = async () => {
     const provider = await this.provider
     if (!this.position) {
-      this.position = await provider.getPosition(this.bookmark)
+      this.position = await this.getPosition()
     }
 
     const events = await provider.getEventsFrom(this.stream, this.position)
@@ -58,10 +58,26 @@ export class EventHandler<E extends Event> implements Handler<E> {
         await handler(event.aggregateId, event.event, toMeta(event))
       }
       this.position = event.position
-      await provider.setPosition(this.bookmark, this.position)
+      await this.setPosition()
     }
 
     return events.length
+  }
+
+  getPosition = async () => {
+    if (this.bookmark === MemoryBookmark) {
+      return this.position === undefined ? 0 : this.position
+    }
+
+    return this.provider.then(prv => prv.getPosition(this.bookmark))
+  }
+
+  setPosition = async () => {
+    if (this.bookmark === MemoryBookmark) {
+      return
+    }
+
+    await this.provider.then(prv => prv.setPosition(this.bookmark, this.position))
   }
 
   run = async () => {

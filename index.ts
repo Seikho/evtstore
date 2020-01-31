@@ -11,3 +11,4 @@ export {
   EventMeta,
 } from './src/types'
 export { VersionError, CommandError } from './provider/error'
+export { MemoryBookmark } from './src/common'
