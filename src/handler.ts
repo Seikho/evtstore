@@ -66,7 +66,11 @@ export class EventHandler<E extends Event> implements Handler<E> {
 
   getPosition = async () => {
     if (this.bookmark === MemoryBookmark) {
-      return this.position === undefined ? 0 : this.position
+      if (this.position) return this.position
+      const notExistantBookmark = new Date().toISOString()
+      const position = await this.provider.then(prv => prv.getPosition(notExistantBookmark))
+      this.position = position
+      return position
     }
 
     return this.provider.then(prv => prv.getPosition(this.bookmark))
