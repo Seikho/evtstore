@@ -1,4 +1,4 @@
-export { createDomain } from './src/domain'
+export { createDomain, createHandler } from './src/domain'
 export {
   Domain,
   Provider,
