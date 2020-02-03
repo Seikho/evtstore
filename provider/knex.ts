@@ -1,6 +1,7 @@
 import * as knex from 'knex'
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
+import { toArray } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -51,7 +52,8 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const rows = await opts
         .events()
         .select()
-        .where({ stream, aggregate_id: aggregateId })
+        .where({ aggregate_id: aggregateId })
+        .whereIn('stream', toArray(stream))
         .orderBy('version', 'asc')
       return rows.map(mapToEvent)
     },

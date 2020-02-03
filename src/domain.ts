@@ -21,6 +21,18 @@ type DomainOptions<E extends Event, A extends Aggregate> = {
   provider: Provider<E> | Promise<Provider<E>>
 }
 
+export function createHandler<Evt extends Event>(
+  bookmark: string,
+  streams: string[],
+  provider: Provider<Evt>
+) {
+  return new EventHandler({
+    bookmark,
+    provider,
+    stream: streams,
+  })
+}
+
 export function createDomain<Evt extends Event, Agg extends Aggregate, Cmd extends Command>(
   opts: DomainOptions<Evt, Agg>,
   cmd: CommandHandler<Evt, Agg, Cmd>

@@ -1,18 +1,19 @@
 import { Event, Provider, Ext, Handler, EventMeta } from './types'
 import { toMeta, MemoryBookmark } from './common'
+import { toArray } from '../provider/util'
 
 const POLL = 1000
 const CRASH = 10000
 
 type Options<E extends Event> = {
-  stream: string
+  stream: string | string[]
   bookmark: string
   provider: Provider<E> | Promise<Provider<E>>
 }
 
 export class EventHandler<E extends Event> implements Handler<E> {
   private bookmark: string
-  private stream: string
+  private streams: string[]
   private provider: Promise<Provider<E>>
   private position: any
   private running = false
@@ -20,7 +21,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
 
   constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
-    this.stream = opts.stream
+    this.streams = toArray(opts.stream)
     this.provider = Promise.resolve(opts.provider)
     this.run()
   }
@@ -50,7 +51,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
       this.position = await this.getPosition()
     }
 
-    const events = await provider.getEventsFrom(this.stream, this.position)
+    const events = await provider.getEventsFrom(this.streams, this.position)
 
     for (const event of events) {
       const handler = this.handlers.get(event.event.type)
@@ -94,7 +95,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
       const handled = await this.runOnce()
       setTimeout(this.run, handled === 0 ? POLL : 0)
     } catch (ex) {
-      await this.provider.then(prv => prv.onError(ex, this.stream, this.bookmark))
+      await this.provider.then(prv => prv.onError(ex, this.streams.join(', '), this.bookmark))
       setTimeout(this.run, CRASH)
     }
   }

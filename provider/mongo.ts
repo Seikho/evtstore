@@ -1,6 +1,7 @@
 import { Collection, Timestamp, MongoError } from 'mongodb'
 import { Event, StoreEvent, Provider, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
+import { toArray } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -37,7 +38,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
     getEventsFrom: async (stream, position) =>
       events.then(coll =>
         coll
-          .find({ stream, position: { $gt: position } })
+          .find({ stream: { $in: toArray(stream) }, position: { $gt: position } })
           .sort({ position: 1 })
           .toArray()
       ),

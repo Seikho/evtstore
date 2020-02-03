@@ -29,7 +29,7 @@ export type Provider<Evt extends Event> = {
   onError: ErrorCallback
   getPosition(bookmark: string): Promise<any>
   setPosition(bookmark: string, position: any): Promise<void>
-  getEventsFrom(stream: string, position: any): Promise<Array<StoreEvent<Evt>>>
+  getEventsFrom(stream: string | string[], position: any): Promise<Array<StoreEvent<Evt>>>
   getEventsFor(stream: string, aggregateId: string): Promise<Array<StoreEvent<Evt>>>
   append(
     stream: string,
