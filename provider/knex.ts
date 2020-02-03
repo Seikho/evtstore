@@ -52,8 +52,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const rows = await opts
         .events()
         .select()
-        .where({ aggregate_id: aggregateId })
-        .whereIn('stream', toArray(stream))
+        .where({ stream, aggregate_id: aggregateId })
         .orderBy('version', 'asc')
       return rows.map(mapToEvent)
     },
@@ -61,7 +60,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const events = await opts
         .events()
         .select()
-        .where({ stream })
+        .whereIn('stream', toArray(stream))
         .andWhere('position', '>', position)
         .orderBy('position', 'asc')
       return events.map(mapToEvent)

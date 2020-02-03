@@ -1,7 +1,7 @@
 import { Handler, Provider, Domain } from '../types'
 import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 import { BaseAggregate } from '../types'
-import { createDomain } from '../domain'
+import { createDomain, createHandler } from '../domain'
 import { expect } from 'chai'
 import { MemoryBookmark } from '../common'
 
@@ -10,7 +10,11 @@ type Model = {
   seen: number
 }
 
-type InputFn = (domain: TestDomain, provider: Provider<ExampleEv>) => Promise<ExampleAgg | void>
+type InputFn = (
+  domain: TestDomain,
+  provider: Provider<ExampleEv>,
+  name: string
+) => Promise<ExampleAgg | void>
 
 interface Test {
   will: string
@@ -145,7 +149,43 @@ export const tests: Test[] = [
       expect(count).to.equal(7)
     },
   },
+  {
+    will: 'correctly handle multiple streams in a single handler',
+    input: [],
+    assert: async ({ command }, provider, name) => {
+      const testId = 'two-streams'
+      const { second, handler } = getSecondDomain(name, provider)
+      let count = 0
+      handler.handle('one', async id => {
+        if (id !== testId) return
+        ++count
+      })
+      await command.doOne(testId, { one: 1 })
+      await command.doOne(testId, { one: 1 })
+      await second.command.doOne(testId, { one: 1 })
+      await second.command.doOne('different-id', { one: 1 })
+
+      await handler.runOnce()
+      expect(count).to.equal(3)
+    },
+  },
 ]
+
+function getSecondDomain(name: string, prv: Provider<ExampleEv>) {
+  const second = createDomain<ExampleEv, ExampleAgg, ExampleCmd>(
+    {
+      provider: prv,
+      aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
+      fold: exampleFold,
+      stream: `${name}-second`,
+    },
+    exampleCmd
+  )
+
+  const handler = createHandler('two-handler', [`${name}-example`, `${name}-second`], prv)
+
+  return { second, handler }
+}
 
 type TestDomain = {
   models: Map<string, Model>

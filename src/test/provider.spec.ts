@@ -14,7 +14,6 @@ type ProviderHelper = Provider<ExampleEv> | Promise<Provider<ExampleEv>>
 const providers: { [key: string]: ProviderHelper } = {
   memory: Promise.resolve(memory.createProvider<ExampleEv>()),
   mongo: createMongo(),
-  mongoAsync: createMongoAsync(),
   sqliteMemory: createSqliteMemory(),
   sqliteFile: createSqliteFile(),
   postgres: createPostgres(),
@@ -30,7 +29,7 @@ describe('provider tests', () => {
           const domain = getDomain(name)!
           const provider = await providers[name]
           for (const func of input) {
-            await func(domain, provider)
+            await func(domain, provider, name)
           }
 
           if (agg) {
@@ -46,7 +45,7 @@ describe('provider tests', () => {
           }
 
           if (assert) {
-            await assert(domain, provider)
+            await assert(domain, provider, name)
           }
         })
       }
@@ -73,17 +72,6 @@ async function createMongo() {
   const events = db.collection<StoreEvent<any>>('events')
   const bookmarks = db.collection<Bookmark>('bookmarks')
   await migrate(events, bookmarks)
-  return createProvider<ExampleEv>({ events, bookmarks })
-}
-
-async function createMongoAsync() {
-  const toColl = async (name: string) => {
-    const { db } = await util.getTestMongoDB('async-mongo')
-    return db.collection(name)
-  }
-  const events = toColl('eventsAsync')
-  const bookmarks = toColl('bookmarksAsync')
-  await migrate(await events, await bookmarks)
   return createProvider<ExampleEv>({ events, bookmarks })
 }
 

@@ -4,12 +4,13 @@ import { MongoClient } from 'mongodb'
 import { config } from 'dotenv'
 
 config({ path: 'test.env' })
+const dbHost = process.env.DB_HOST || '127.0.0.1'
 
 export async function getTestMongoDB(dbName: string) {
   const port = Number(process.env.MONGO_PORT)
   if (isNaN(port)) throw new Error('MONGO_PORT not set')
 
-  const client = await MongoClient.connect(`mongodb://127.0.0.1:${port}`, {
+  const client = await MongoClient.connect(`mongodb://${dbHost}:${port}`, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -32,7 +33,7 @@ export async function getTestPostgresDB(dbName: string) {
   const root = knex({
     client: 'pg',
     connection: {
-      host: '127.0.0.1',
+      host: dbHost,
       port,
       user,
       password,
@@ -49,7 +50,7 @@ export async function getTestPostgresDB(dbName: string) {
   const client = knex({
     client: 'pg',
     connection: {
-      host: '127.0.0.1',
+      host: dbHost,
       port,
       user,
       password,
