@@ -22,6 +22,11 @@ export class EventHandler<E extends Event> implements Handler<E> {
   constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
     this.streams = toArray(opts.stream)
+
+    if (this.streams.length === 0) {
+      throw new Error('Cannot create event handler subscribed to no streams')
+    }
+
     this.provider = Promise.resolve(opts.provider)
     this.run()
   }
