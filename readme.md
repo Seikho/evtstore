@@ -26,10 +26,14 @@ To obtain these goals the design is highly opinionated, but still flexible.
 
 **See `src/test/util.ts` and `provider.spec.ts` for examples**
 
+### In-memory
+
 `evtstore/provider/memory`
 
 - In memory provider for experimentation.
 - This can be initalised with an array of `StoredEvent[]`
+
+### SQL with Knex.js
 
 `evtstore/provider/knex`
 
@@ -38,6 +42,8 @@ To obtain these goals the design is highly opinionated, but still flexible.
 - Bookmark table: `{ bookmark: string, position: number }`
 - Events table: `{ stream: string, version: number, position: number, timestamp: DateTime, event: text }`
 - A `migrate` function is provided
+
+### MongoDB
 
 `evtstore/provider/mongo`
 
@@ -87,7 +93,10 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
      * - append and retrieving events (by aggregate id and from a position)
      * - retrieve and update bookmarks
      */
-    provider: createProvider(),
+    provider: createProvider({
+      onError: (err, stream, bookmark) =>
+        console.error(`Handler "${stream}:${bookmark} failed: `, err),
+    }),
     fold: (ev, agg) => {
       switch (ev.type) {
         case 'NameChanged':
@@ -136,10 +145,6 @@ async function example() {
   await user.changeName({ name: 'new name' })
 }
 ```
-
-## TODO
-
-- Logging
 
 ## License
 

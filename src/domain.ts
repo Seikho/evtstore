@@ -19,6 +19,7 @@ type DomainOptions<E extends Event, A extends Aggregate> = {
   stream: string
   fold: Fold<E, A>
   provider: Provider<E> | Promise<Provider<E>>
+  useCache?: boolean
 }
 
 export function createHandler<Evt extends Event>(
@@ -63,12 +64,36 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     throw new Error(`Invalid command body: Command handler function cannot be named "aggregate"`)
   }
 
+  const aggregateCache = new Map<
+    string,
+    { aggregate: A & { aggregateId: string; version: number }; position: any }
+  >()
+
   async function getAggregate(id: string) {
     const provider = await providerAsync
+
+    const cached = opts.useCache && aggregateCache.get(id)
+    if (cached) {
+      const events = await provider.getEventsFor(opts.stream, id, cached.position)
+      if (!events.length) {
+        return cached.aggregate
+      }
+
+      const lastEvent = events.slice(-1)[0]
+      const aggregate = events.reduce(toNextAggregate, cached.aggregate)
+      aggregateCache.set(id, { aggregate, position: lastEvent.position })
+      return aggregate
+    }
+
     const events = await provider.getEventsFor(opts.stream, id)
+
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
-    const agg = events.reduce(toNextAggregate, next)
-    return agg
+    const aggregate = events.reduce(toNextAggregate, next)
+    if (events.length > 0) {
+      const lastEvent = events.slice(-1)[0]
+      aggregateCache.set(id, { aggregate, position: lastEvent.position })
+    }
+    return aggregate
   }
 
   async function getExecAggregate(id: string) {

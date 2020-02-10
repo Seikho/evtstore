@@ -1,4 +1,4 @@
-import { Collection, Timestamp, MongoError } from 'mongodb'
+import { Collection, Timestamp, MongoError, FilterQuery } from 'mongodb'
 import { Event, StoreEvent, Provider, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 import { toArray } from './util'
@@ -28,13 +28,26 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
     onError,
     getPosition: bm => getPos(bm, bookmarks),
     setPosition: (bm, pos) => setPos(bm, pos, bookmarks),
-    getEventsFor: async (stream, id) =>
-      events.then(coll =>
+    getEventsFor: async (stream, id, fromPosition) => {
+      const query: FilterQuery<StoreEvent<E>> = {
+        stream,
+        aggregateId: id,
+      }
+
+      if (fromPosition !== undefined) {
+        query.position = { $gt: fromPosition }
+      }
+
+      const results = await events.then(coll =>
         coll
-          .find({ stream, aggregateId: id })
+          .find(query)
           .sort({ position: 1 })
           .toArray()
-      ),
+      )
+
+      return results
+    },
+
     getEventsFrom: async (stream, position) =>
       events.then(coll =>
         coll

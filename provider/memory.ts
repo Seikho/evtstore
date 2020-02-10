@@ -20,8 +20,14 @@ export function createProvider<E extends Event>(
     return events.filter(ev => toArray(stream).includes(ev.stream) && ev.position > pos)
   }
 
-  const getEventsFor = async (stream: string, id: string) => {
-    return events.filter(ev => ev.stream === stream && ev.aggregateId === id)
+  const getEventsFor = async (stream: string, id: string, fromPosition?: number) => {
+    const filter =
+      fromPosition === undefined
+        ? (ev: StoreEvent<E>) => ev.stream === stream && ev.aggregateId === id
+        : (ev: StoreEvent<E>) =>
+            ev.stream === stream && ev.aggregateId === id && ev.position > fromPosition
+
+    return events.filter(filter)
   }
 
   const append = async (stream: string, aggregateId: string, version: number, newEvents: E[]) => {

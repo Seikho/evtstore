@@ -48,12 +48,18 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         await opts.bookmarks().insert({ bookmark: bm, position: pos })
       }
     },
-    getEventsFor: async (stream, aggregateId) => {
-      const rows = await opts
+    getEventsFor: async (stream, aggregateId, fromPosition) => {
+      const query = opts
         .events()
         .select()
         .where({ stream, aggregate_id: aggregateId })
         .orderBy('version', 'asc')
+
+      if (fromPosition !== undefined) {
+        query.andWhere('position', '>', fromPosition)
+      }
+
+      const rows = await query
       return rows.map(mapToEvent)
     },
     getEventsFrom: async (stream, position) => {

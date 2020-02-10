@@ -30,7 +30,11 @@ export type Provider<Evt extends Event> = {
   getPosition(bookmark: string): Promise<any>
   setPosition(bookmark: string, position: any): Promise<void>
   getEventsFrom(stream: string | string[], position: any): Promise<Array<StoreEvent<Evt>>>
-  getEventsFor(stream: string, aggregateId: string): Promise<Array<StoreEvent<Evt>>>
+  getEventsFor(
+    stream: string,
+    aggregateId: string,
+    fromPosition?: any
+  ): Promise<Array<StoreEvent<Evt>>>
   append(
     stream: string,
     aggregateId: string,
