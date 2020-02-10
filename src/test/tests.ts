@@ -201,6 +201,7 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
       aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
       fold: exampleFold,
       stream: `${name}-example`,
+      useCache: true,
     },
     exampleCmd
   )
