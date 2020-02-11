@@ -95,7 +95,7 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
      */
     provider: createProvider(),
     onError: (err, stream, bookmark) =>
-      console.error(`Handler "${stream}:${bookmark} failed: `, err),
+      console.error(`Handler "${stream}:${bookmark}" failed: `, err),
     fold: (ev, agg) => {
       switch (ev.type) {
         case 'NameChanged':
