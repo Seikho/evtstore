@@ -3,7 +3,11 @@ import * as sql from '../../provider/knex'
 import { MongoClient } from 'mongodb'
 import { config } from 'dotenv'
 
-config({ path: 'test.env' })
+try {
+  config({ path: '.env' })
+  config({ path: 'test.env' })
+} catch (ex) {}
+
 const dbHost = process.env.DB_HOST || '127.0.0.1'
 
 export async function getTestMongoDB(dbName: string) {

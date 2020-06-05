@@ -28,6 +28,13 @@ model.handle('two', async (_, ev) => {
   readModel.last = ev.type
 })
 
+const { handle: scopedHandle } = model
+
+scopedHandle('three', async (_, ev) => {
+  readModel.v++
+  readModel.last = ev.type
+})
+
 describe('in memory provider::commands', () => {
   it('will append an event', async () => {
     await command.doOne('1', { one: 1 })
@@ -65,5 +72,11 @@ describe('in memory provider::handler', () => {
     await model.runOnce()
     expect(readModel.v).to.equal(3)
     expect(readModel.last).to.equal('one')
+  })
+
+  it('will correctly use destructured handle function', async () => {
+    await command.doThree('1', { three: [123] })
+    await model.runOnce()
+    expect(readModel.last).to.equal('three')
   })
 })

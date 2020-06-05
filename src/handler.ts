@@ -31,22 +31,22 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.run()
   }
 
-  handle<T extends E['type']>(
+  handle = <T extends E['type']>(
     type: T,
     cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<void>
-  ) {
+  ) => {
     this.handlers.set(type, cb as any)
   }
 
-  start() {
+  start = () => {
     this.running = true
   }
 
-  stop() {
+  stop = () => {
     this.running = false
   }
 
-  reset() {
+  reset = () => {
     this.position = undefined
   }
 
@@ -74,12 +74,12 @@ export class EventHandler<E extends Event> implements Handler<E> {
     if (this.bookmark === MemoryBookmark) {
       if (this.position) return this.position
       const notExistantBookmark = new Date().toISOString()
-      const position = await this.provider.then(prv => prv.getPosition(notExistantBookmark))
+      const position = await this.provider.then((prv) => prv.getPosition(notExistantBookmark))
       this.position = position
       return position
     }
 
-    return this.provider.then(prv => prv.getPosition(this.bookmark))
+    return this.provider.then((prv) => prv.getPosition(this.bookmark))
   }
 
   setPosition = async () => {
@@ -87,7 +87,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
       return
     }
 
-    await this.provider.then(prv => prv.setPosition(this.bookmark, this.position))
+    await this.provider.then((prv) => prv.setPosition(this.bookmark, this.position))
   }
 
   run = async () => {
@@ -100,7 +100,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
       const handled = await this.runOnce()
       setTimeout(this.run, handled === 0 ? POLL : 0)
     } catch (ex) {
-      await this.provider.then(prv => prv.onError(ex, this.streams.join(', '), this.bookmark))
+      await this.provider.then((prv) => prv.onError(ex, this.streams.join(', '), this.bookmark))
       setTimeout(this.run, CRASH)
     }
   }
