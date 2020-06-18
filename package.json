@@ -40,12 +40,12 @@
     "@types/mocha": "^5.2.7",
     "chai": "^4.2.0",
     "dotenv": "^8.1.0",
-    "knex": "^0.20.8",
-    "mocha": "^6.2.1",
+    "knex": "^0.21.1",
+    "mocha": "^8.0.1",
     "mongodb": "^3.3.2",
     "pg": "^7.12.1",
     "rimraf": "^3.0.0",
-    "sqlite3": "^4.1.0",
+    "sqlite3": "^4.2.0",
     "typescript": "^3.7.3"
   },
   "types": "index.d.ts"
