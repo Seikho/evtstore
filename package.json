@@ -1,10 +1,10 @@
 {
   "name": "evtstore",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
-    "test": "mocha \"src/test/**/*.spec.js\" --exit",
+    "test": "mocha \"src/test/**/*.spec.js\" --exit -t 4000",
     "clean": "rimraf \"*.js\" \"*.js.map\" \"*.d.ts\" \"src/**/*.js*\" \"src/**/*.d.ts\" \"provider/**/*.js*\" \"provider/**/*.d.ts\"",
     "prebuild": "yarn clean",
     "build": "tsc",
@@ -43,7 +43,7 @@
     "knex": "^0.21.1",
     "mocha": "^8.0.1",
     "mongodb": "^3.3.2",
-    "pg": "^7.12.1",
+    "pg": "^8.2.1",
     "rimraf": "^3.0.0",
     "sqlite3": "^4.2.0",
     "typescript": "^3.7.3"

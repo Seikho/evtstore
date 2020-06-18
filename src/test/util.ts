@@ -41,7 +41,7 @@ export async function getTestPostgresDB(dbName: string) {
       port,
       user,
       password,
-      database: 'admin',
+      database: 'postgres',
     },
   })
 
