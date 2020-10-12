@@ -66,13 +66,9 @@ Some examples are available in the `src/test/provider.spec.ts` module
 import { createDomain } from 'evtstore'
 import { createProvider } from 'evtstore/provider/memory'
 
-type UserCreated = { type: 'UserCreated' }
-type NameChanged = { type: 'NameChanged'; name: string }
-type UserEvent = UserCreated | NameChanged
+type UserEvent = { type: 'UserCreated' } | { type: 'NameChanged'; name: string }
 
-type CreateUser = { type: 'createUser' }
-type ChangeName = { type: 'changeName'; name: string }
-type UserCommand = CreateUser | ChangeName
+type UserCommand = { type: 'createUser' } | { type: 'changeName'; name: string }
 
 type UserAggregate = { name: string }
 
@@ -93,9 +89,11 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
      * - append and retrieving events (by aggregate id and from a position)
      * - retrieve and update bookmarks
      */
-    provider: createProvider(),
-    onError: (err, stream, bookmark) =>
-      console.error(`Handler "${stream}:${bookmark}" failed: `, err),
+    provider: createProvider({
+      onError: (err, stream, bookmark) => {
+        console.error(`Handler "${stream}:${bookmark}" failed: `, err)
+      },
+    }),
     fold: (ev, agg) => {
       switch (ev.type) {
         case 'NameChanged':
@@ -124,8 +122,8 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
 
 const userPopulator = userDomain.handler('user-populator')
 
-userPopulator.handle('NameChanged', async (aggregateId, event) => {
-  // The "event" parameter will be the NameChanged type
+userPopulator.handle('NameChanged', async (aggregateId, event, meta) => {
+  // The "event" parameter will be the UserEvent:NameChanged type
 })
 
 userPopulator.start()
