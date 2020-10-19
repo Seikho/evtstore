@@ -47,6 +47,7 @@ export function createDomain<Evt extends Event, Agg extends Aggregate, Cmd exten
   }
 
   return {
+    stream: opts.stream,
     handler,
     ...wrapCmd(opts, cmd),
   }
@@ -101,7 +102,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
     const body: ExecutableAggregate<C, A> = {} as any
 
     for (const type of keys) {
-      body[type] = async cmdBody => {
+      body[type] = async (cmdBody) => {
         const cmdResult = await cmd[type]({ ...cmdBody, aggregateId: id, type }, aggregate)
         const nextAggregate = await handleCommandResult(cmdResult, aggregate)
 

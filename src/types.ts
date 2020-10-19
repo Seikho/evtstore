@@ -65,6 +65,7 @@ export type CommandHandler<E extends Event, A extends Aggregate, C extends Comma
 }
 
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
+  readonly stream: string
   handler(bookmark: string): Handler<E>
   command: CmdBody<C, A>
   getAggregate(
