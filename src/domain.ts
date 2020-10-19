@@ -10,11 +10,13 @@ import {
   StoreEvent,
   BaseAggregate,
   ExecutableAggregate,
+  Ext,
+  EventMeta,
 } from './types'
 import { EventHandler } from './handler'
 import { toMeta } from './common'
 
-type DomainOptions<E extends Event, A extends Aggregate> = {
+export type DomainOptions<E extends Event, A extends Aggregate> = {
   aggregate: () => A
   stream: string
   fold: Fold<E, A>
@@ -22,16 +24,50 @@ type DomainOptions<E extends Event, A extends Aggregate> = {
   useCache?: boolean
 }
 
-export function createHandler<Evt extends Event>(
+export type StreamsHandler<T extends { [key: string]: Event }> = <
+  TStream extends keyof T,
+  TType extends T[TStream]['type']
+>(
+  stream: TStream,
+  type: TType,
+  handler: (id: string, event: Ext<T[TStream], TType>, meta: EventMeta) => any
+) => void
+
+export function createHandler<Body extends { [key: string]: Event }>(
   bookmark: string,
-  streams: string[],
-  provider: Provider<Evt>
+  streams: Array<keyof Body>,
+  provider: Provider<Event>
 ) {
-  return new EventHandler({
+  const handler = new EventHandler({
     bookmark,
     provider,
-    stream: streams,
+    stream: streams as string[],
   })
+
+  type CB = (id: string, event: Event, meta: EventMeta) => any
+  const callbacks = new Map<string, CB>()
+
+  const handle: StreamsHandler<Body> = (stream, type, callback) => {
+    callbacks.set(`${stream}-${type}`, callback as any)
+
+    handler.handle(type, (id, event, meta) => {
+      const cb = callbacks.get(`${meta.stream}-${event.type}`)
+      if (!cb) return
+
+      return cb(id, event as any, meta)
+    })
+  }
+
+  return {
+    handle,
+    start: handler.start,
+    stop: handler.stop,
+    runOnce: handler.runOnce,
+    run: handler.run,
+    setPosition: handler.setPosition,
+    getPosition: handler.getPosition,
+    reset: handler.reset,
+  }
 }
 
 export function createDomain<Evt extends Event, Agg extends Aggregate, Cmd extends Command>(

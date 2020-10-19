@@ -152,37 +152,51 @@ export const tests: Test[] = [
   {
     will: 'correctly handle multiple streams in a single handler',
     input: [],
-    assert: async ({ command }, provider, name) => {
+    assert: async ({ command }, provider) => {
       const testId = 'two-streams'
-      const { second, handler } = getSecondDomain(name, provider)
-      let count = 0
-      handler.handle('one', async id => {
+      const { second, handler } = getSecondDomain(provider)
+      let firstCount = 0
+      let secondCount = 0
+
+      handler.handle('test-example', 'one', async (id) => {
         if (id !== testId) return
-        ++count
+        ++firstCount
       })
+
+      handler.handle('test-second', 'one', async (id) => {
+        if (id !== testId) return
+        ++secondCount
+      })
+
       await command.doOne(testId, { one: 1 })
       await command.doOne(testId, { one: 1 })
       await second.command.doOne(testId, { one: 1 })
       await second.command.doOne('different-id', { one: 1 })
 
       await handler.runOnce()
-      expect(count).to.equal(3)
+      expect(firstCount).to.equal(2)
+      expect(secondCount).to.equal(1)
     },
   },
 ]
 
-function getSecondDomain(name: string, prv: Provider<ExampleEv>) {
+function getSecondDomain(prv: Provider<ExampleEv>) {
   const second = createDomain<ExampleEv, ExampleAgg, ExampleCmd>(
     {
       provider: prv,
       aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
       fold: exampleFold,
-      stream: `${name}-second`,
+      stream: `test-second`,
     },
     exampleCmd
   )
 
-  const handler = createHandler('two-handler', [`${name}-example`, `${name}-second`], prv)
+  type Events = {
+    'test-example': ExampleEv
+    'test-second': ExampleEv
+  }
+
+  const handler = createHandler<Events>('two-handler', [`test-example`, `test-second`], prv)
 
   return { second, handler }
 }
@@ -200,7 +214,7 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
       provider,
       aggregate: () => ({ one: 0, two: '', three: [], multi: 0 }),
       fold: exampleFold,
-      stream: `${name}-example`,
+      stream: `test-example`,
       useCache: true,
     },
     exampleCmd
@@ -209,6 +223,7 @@ export function registerTestDomain(name: string, provider: Provider<ExampleEv>) 
   const models = new Map<string, Model>()
 
   const populator = domain.handler(`${name}-example`)
+
   populator.handle('one', async (id, ev) => {
     const model = models.get(id) || { one: 0, seen: 0 }
     model.seen++
