@@ -80,16 +80,19 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
 }
 
 export async function migrate(
-  events: Collection<StoreEvent<any>>,
-  bookmarks: Collection<Bookmark>
+  events: Collection<StoreEvent<any>> | Promise<Collection<StoreEvent<any>>>,
+  bookmarks: Collection<Bookmark> | Promise<Collection<Bookmark>>
 ) {
-  await bookmarks.createIndex({ bookmark: 1 }, { name: 'bookmark-index', unique: true })
-  await events.createIndex(
+  const eventColl = await events
+  const bookmarkColl = await bookmarks
+
+  await bookmarkColl.createIndex({ bookmark: 1 }, { name: 'bookmark-index', unique: true })
+  await eventColl.createIndex(
     { stream: 1, position: 1 },
     { name: 'stream-position-index', unique: true }
   )
 
-  await events.createIndex(
+  await eventColl.createIndex(
     { stream: 1, aggregateId: 1, version: 1 },
     { name: 'stream-id-version-index', unique: true }
   )

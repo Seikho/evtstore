@@ -1,6 +1,6 @@
 # EvtStore
 
-> "Pretty Type Safe(tm)" Event Sourcing for Node.js with TypeScript
+> "Pretty Type Safe(tm)" CQRS and Event Sourcing for Node.js with TypeScript
 
 ## Why
 
@@ -26,16 +26,36 @@ To obtain these goals the design is highly opinionated, but still flexible.
 
 **See `src/test/util.ts` and `provider.spec.ts` for examples**
 
+## Database Providers
+
+### Custom Providers
+
+You can create your own providers. See the existing providers for examples.
+
 ### In-memory
 
-`evtstore/provider/memory`
+`import { createProvider } from 'evtstore/provider/memory'`
 
 - In memory provider for experimentation.
 - This can be initalised with an array of `StoredEvent[]`
 
 ### SQL with Knex.js
 
-`evtstore/provider/knex`
+``
+
+```ts
+import { createProvider, migrate } from 'evtstore/provider/knex'
+
+const provider = createProvider({
+  limit: 1000, // The maximum number of events that can be returned at a time
+  events: () => dbClient.table('events'),
+  bookmarks: () => dbClient.table('bookmarks'),
+})
+
+export async function setupEventStore() {
+  await migrate({ client: dbClient, events: 'events', bookmarks: 'bookmarks' })
+}
+```
 
 - SQL provider for SQLite and Postgres
 - The `knex` and `sqlite3 or pg` dependencies must be installed prior to use
@@ -45,7 +65,26 @@ To obtain these goals the design is highly opinionated, but still flexible.
 
 ### MongoDB
 
-`evtstore/provider/mongo`
+```ts
+import { createProvider, migrate } from 'evtstore/provider/mongo'
+const client = MongoClient.connect('mongodb://...')
+
+const events = client.then((db) => db.collection('events'))
+const bookmarks = client.then((db) => db.collection('bookmarks'))
+
+const provider = createProvider({
+  limit: 1000, // Maximum number of events to return in a single query
+
+  // The events and bookmarks collections can be promises of collections or just collections
+  events,
+  bookmarks,
+})
+
+export async function setupEventStore() {
+  // The events and bookmarks collections can be promises of collections or just collections
+  await migrate(events, bookmarks)
+}
+```
 
 - A MongoDB provider
 - The `mongodb` dependency is not included and must be installed prior to using it.
