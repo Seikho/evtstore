@@ -83,7 +83,6 @@ export function createDomain<Evt extends Event, Agg extends Aggregate, Cmd exten
   }
 
   return {
-    stream: opts.stream,
     handler,
     ...wrapCmd(opts, cmd),
   }

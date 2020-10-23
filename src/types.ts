@@ -65,7 +65,6 @@ export type CommandHandler<E extends Event, A extends Aggregate, C extends Comma
 }
 
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
-  readonly stream: string
   handler(bookmark: string): Handler<E>
   command: CmdBody<C, A>
   getAggregate(
@@ -86,4 +85,4 @@ export type ExecutableAggregate<C extends Command, A extends Aggregate> = {
 
 type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
 
-type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & { type?: T }
+type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & { type: T }

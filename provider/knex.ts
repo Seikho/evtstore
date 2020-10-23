@@ -15,6 +15,7 @@ export type MigrateOptions = {
 }
 
 export type Options = {
+  limit?: number
   onError?: ErrorCallback
   bookmarks: () => knex.QueryBuilder<any, any>
   events: () => knex.QueryBuilder<any, any>
@@ -29,20 +30,13 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
   return {
     driver: 'knex',
     onError,
-    getPosition: async bm => {
-      const result = await opts
-        .bookmarks()
-        .select()
-        .where('bookmark', bm)
-        .first()
+    getPosition: async (bm) => {
+      const result = await opts.bookmarks().select().where('bookmark', bm).first()
       if (result) return result.position
       return 0
     },
     setPosition: async (bm, pos) => {
-      const updates = await opts
-        .bookmarks()
-        .update({ position: pos })
-        .where('bookmark', bm)
+      const updates = await opts.bookmarks().update({ position: pos }).where('bookmark', bm)
 
       if (updates === 0) {
         await opts.bookmarks().insert({ bookmark: bm, position: pos })
@@ -63,12 +57,17 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       return rows.map(mapToEvent)
     },
     getEventsFrom: async (stream, position) => {
-      const events = await opts
+      const query = opts
         .events()
         .select()
         .whereIn('stream', toArray(stream))
         .andWhere('position', '>', position)
         .orderBy('position', 'asc')
+
+      if (opts.limit) query.limit(opts.limit)
+
+      const events = await query
+
       return events.map(mapToEvent)
     },
     append: async (stream, aggregateId, version, newEvents) => {
@@ -82,7 +81,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           timestamp: new Date(Date.now()),
         }))
 
-        const toInsert = storeEvents.map(storeEvent => ({
+        const toInsert = storeEvents.map((storeEvent) => ({
           stream: storeEvent.stream,
           aggregate_id: storeEvent.aggregateId,
           event: JSON.stringify(storeEvent.event),
@@ -109,11 +108,11 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 export async function migrate(opts: MigrateOptions) {
   if (!opts.bookmarks && !opts.events) return
 
-  await opts.client.transaction(async trx => {
+  await opts.client.transaction(async (trx) => {
     if (opts.events) {
       const eventsExists = await trx.schema.hasTable(opts.events)
       if (!eventsExists) {
-        await trx.schema.createTable(opts.events, tbl => {
+        await trx.schema.createTable(opts.events, (tbl) => {
           tbl.bigIncrements('position').primary()
           tbl.integer('version')
           tbl.string('stream')
@@ -122,7 +121,7 @@ export async function migrate(opts: MigrateOptions) {
           tbl.text('event')
         })
 
-        await trx.schema.table(opts.events, tbl => {
+        await trx.schema.table(opts.events, (tbl) => {
           tbl.unique(['stream', 'position'])
           tbl.unique(['stream', 'aggregate_id', 'version'])
         })
@@ -133,7 +132,7 @@ export async function migrate(opts: MigrateOptions) {
       const bookmarkExists = await trx.schema.hasTable(opts.bookmarks)
 
       if (!bookmarkExists) {
-        await trx.schema.createTable(opts.bookmarks, tbl => {
+        await trx.schema.createTable(opts.bookmarks, (tbl) => {
           tbl.string('bookmark').primary()
           tbl.bigInteger('position')
         })

@@ -14,9 +14,11 @@ type ProviderHelper = Provider<ExampleEv> | Promise<Provider<ExampleEv>>
 const providers: { [key: string]: ProviderHelper } = {
   memory: Promise.resolve(memory.createProvider<ExampleEv>()),
   mongo: createMongo(),
+  mongoLimit: createLimitedMongo(),
   sqliteMemory: createSqliteMemory(),
   sqliteFile: createSqliteFile(),
   postgres: createPostgres(),
+  postgresLimit: createLimitPostgres(),
 }
 
 describe('provider tests', () => {
@@ -75,6 +77,14 @@ async function createMongo() {
   return createProvider<ExampleEv>({ events, bookmarks })
 }
 
+async function createLimitedMongo() {
+  const { db } = await util.getTestMongoDB('sync-mongolimited')
+  const events = db.collection<StoreEvent<any>>('events')
+  const bookmarks = db.collection<Bookmark>('bookmarks')
+  await migrate(events, bookmarks)
+  return createProvider<ExampleEv>({ limit: 1, events, bookmarks })
+}
+
 async function createSqliteMemory() {
   const db = knex({
     client: 'sqlite3',
@@ -123,6 +133,17 @@ async function createSqliteFile() {
 async function createPostgres() {
   const client = await util.getTestPostgresDB('postgresasync')
   const provider = sql.createProvider<ExampleEv>({
+    bookmarks: () => client<any, any>('bookmarks'),
+    events: () => client<any, any>('events'),
+  })
+
+  return provider
+}
+
+async function createLimitPostgres() {
+  const client = await util.getTestPostgresDB('postgresasynclimited')
+  const provider = sql.createProvider<ExampleEv>({
+    limit: 1,
     bookmarks: () => client<any, any>('bookmarks'),
     events: () => client<any, any>('events'),
   })

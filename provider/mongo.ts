@@ -9,6 +9,7 @@ export type Bookmark = {
 }
 
 export type Options<E extends Event> = {
+  limit?: number
   events: Collection<StoreEvent<E>> | Promise<Collection<StoreEvent<E>>>
   bookmarks: Collection<Bookmark> | Promise<Collection<Bookmark>>
   onError?: ErrorCallback
@@ -26,7 +27,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
   return {
     driver: 'mongo',
     onError,
-    getPosition: bm => getPos(bm, bookmarks),
+    getPosition: (bm) => getPos(bm, bookmarks),
     setPosition: (bm, pos) => setPos(bm, pos, bookmarks),
     getEventsFor: async (stream, id, fromPosition) => {
       const query: FilterQuery<StoreEvent<E>> = {
@@ -38,23 +39,23 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
         query.position = { $gt: fromPosition }
       }
 
-      const results = await events.then(coll =>
-        coll
-          .find(query)
-          .sort({ position: 1 })
-          .toArray()
-      )
+      const results = await events.then((coll) => coll.find(query).sort({ position: 1 }).toArray())
 
       return results
     },
 
     getEventsFrom: async (stream, position) =>
-      events.then(coll =>
-        coll
+      events.then((coll) => {
+        const query = coll
           .find({ stream: { $in: toArray(stream) }, position: { $gt: position } })
           .sort({ position: 1 })
-          .toArray()
-      ),
+
+        if (opts.limit) {
+          query.limit(opts.limit)
+        }
+
+        return query.toArray()
+      }),
     append: async (stream, aggregateId, version, newEvents) => {
       const timestamp = new Date(Date.now())
 
@@ -68,7 +69,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
           aggregateId,
         }))
 
-        await events.then(coll => coll.insertMany(toStore))
+        await events.then((coll) => coll.insertMany(toStore))
         return toStore
       } catch (ex) {
         if (ex instanceof MongoError && ex.code === 11000) throw new VersionError()
@@ -95,13 +96,13 @@ export async function migrate(
 }
 
 async function getPos(bm: string, bookmarks: Promise<Collection<Bookmark>>) {
-  const record = await bookmarks.then(coll => coll.findOne({ bookmark: bm }))
+  const record = await bookmarks.then((coll) => coll.findOne({ bookmark: bm }))
   if (record) return record.position
   return new Timestamp(0, 0)
 }
 
 async function setPos(bm: string, pos: Timestamp, bookmarks: Promise<Collection<Bookmark>>) {
-  await bookmarks.then(coll =>
+  await bookmarks.then((coll) =>
     coll.updateOne({ bookmark: bm }, { $set: { position: pos } }, { upsert: true })
   )
 }

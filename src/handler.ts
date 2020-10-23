@@ -50,7 +50,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.position = undefined
   }
 
-  runOnce = async () => {
+  runOnce = async (runningCount = 0): Promise<number> => {
     const provider = await this.provider
     if (!this.position) {
       this.position = await this.getPosition()
@@ -67,7 +67,11 @@ export class EventHandler<E extends Event> implements Handler<E> {
       await this.setPosition()
     }
 
-    return events.length
+    if (events.length > 0) {
+      return this.runOnce(events.length + runningCount)
+    }
+
+    return events.length + runningCount
   }
 
   getPosition = async () => {
