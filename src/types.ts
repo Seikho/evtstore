@@ -41,6 +41,7 @@ export type Provider<Evt extends Event> = {
     version: number,
     event: Evt[]
   ): Promise<Array<StoreEvent<Evt>>>
+  limit?: number
 }
 
 export type Handler<E extends Event> = {

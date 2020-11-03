@@ -28,6 +28,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       /* NOOP */
     })
   return {
+    limit: opts.limit,
     driver: 'knex',
     onError,
     getPosition: async (bm) => {

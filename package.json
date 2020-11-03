@@ -1,6 +1,6 @@
 {
   "name": "evtstore",
-  "version": "5.2.0",
+  "version": "6.0.0-rc1",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
@@ -9,9 +9,8 @@
     "prebuild": "yarn clean",
     "build": "tsc",
     "prepublishOnly": "yarn run clean && yarn build && yarn test",
-    "db:remove": "docker rm -f evtstore-mongo evtstore-pg || true",
-    "predb:create": "yarn db:remove",
-    "db:create": "docker run -dt --name evtstore-mongo -p 30001:27017 mongo:4.0 && docker run --env-file=test.env -dt --name evtstore-pg -p 30002:5432 postgres:12"
+    "up": "docker-compose up -d",
+    "down": "docker-compose down"
   },
   "repository": {
     "type": "git",
@@ -43,10 +42,11 @@
     "knex": "^0.21.1",
     "mocha": "^8.1.3",
     "mongodb": "^3.3.2",
+    "neo4j-driver": "^4.1.2",
     "pg": "^8.2.1",
     "rimraf": "^3.0.0",
     "sqlite3": "^4.2.0",
-    "typescript": "^3.7.3"
+    "typescript": "^4.0.5"
   },
   "types": "index.d.ts"
 }

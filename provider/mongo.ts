@@ -25,6 +25,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
     })
 
   return {
+    limit: opts.limit,
     driver: 'mongo',
     onError,
     getPosition: (bm) => getPos(bm, bookmarks),

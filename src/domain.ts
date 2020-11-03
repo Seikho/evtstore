@@ -110,7 +110,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
 
     const cached = opts.useCache && aggregateCache.get(id)
     if (cached) {
-      const events = await provider.getEventsFor(opts.stream, id, cached.position)
+      const events = await getAllEventsFor<E>(provider, opts.stream, id, cached.position)
       if (!events.length) {
         return cached.aggregate
       }
@@ -121,7 +121,7 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
       return aggregate
     }
 
-    const events = await provider.getEventsFor(opts.stream, id)
+    const events = await getAllEventsFor<E>(provider, opts.stream, id)
 
     const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
     const aggregate = events.reduce(toNextAggregate, next)
@@ -186,4 +186,24 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
   }
 
   return { command, getAggregate: getExecAggregate }
+}
+
+async function getAllEventsFor<E extends Event>(
+  provider: Provider<any>,
+  stream: string,
+  id: string,
+  from?: any
+) {
+  const events: StoreEvent<E>[] = []
+  let current = from
+  do {
+    const stored = await provider.getEventsFor(stream, id, current)
+    events.push(...stored)
+    if (stored.length === 0) return events
+    if (!provider.limit) return events
+    if (stored.length < provider.limit) return events
+
+    const last = stored.slice(-1)[0]
+    current = last.position
+  } while (true)
 }

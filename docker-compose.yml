@@ -1,0 +1,26 @@
+version: '2'
+
+services:
+  pg:
+    image: postgres:12
+    restart: always
+    ports:
+      - '30002:5432'
+    environment:
+      - 'POSTGRES_USER=admin'
+      - 'POSTGRES_PASSWORD=admin'
+
+  mongo:
+    image: mongo:4.0
+    restart: always
+    ports:
+      - '30001:27017'
+
+  neo:
+    image: neo4j:4.1
+    restart: always
+    ports:
+      - '30003:7687'
+      - '30004:7474'
+    environment:
+      - 'NEO4J_AUTH=neo4j/admin'

@@ -2,6 +2,7 @@ import * as knex from 'knex'
 import * as util from './util'
 import * as memory from '../../provider/memory'
 import * as sql from '../../provider/knex'
+import * as neo from '../../provider/neo4j'
 import * as fs from 'fs'
 import { tests, registerTestDomain, getDomain } from './tests'
 import { StoreEvent, Provider } from '../types'
@@ -19,6 +20,8 @@ const providers: { [key: string]: ProviderHelper } = {
   sqliteFile: createSqliteFile(),
   postgres: createPostgres(),
   postgresLimit: createLimitPostgres(),
+  neo4j: createNeo(),
+  neo4jLimit: createNeoLimit(),
 }
 
 describe('provider tests', () => {
@@ -146,6 +149,29 @@ async function createLimitPostgres() {
     limit: 1,
     bookmarks: () => client<any, any>('bookmarks'),
     events: () => client<any, any>('events'),
+  })
+
+  return provider
+}
+
+async function createNeo() {
+  const db = await util.createTestNeoDB('Neo')
+  const provider = neo.createProvider<ExampleEv>({
+    bookmarks: db.bookmarks,
+    events: db.events,
+    session: db.session,
+  })
+
+  return provider
+}
+
+async function createNeoLimit() {
+  const db = await util.createTestNeoDB('NeoLimit')
+  const provider = neo.createProvider<ExampleEv>({
+    limit: 1,
+    bookmarks: db.bookmarks,
+    events: db.events,
+    session: db.session,
   })
 
   return provider
