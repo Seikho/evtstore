@@ -3,6 +3,7 @@ import * as util from './util'
 import * as memory from '../../provider/memory'
 import * as sql from '../../provider/knex'
 import * as neo from '../../provider/neo4j'
+import * as neov3 from '../../provider/neo4j-v3'
 import * as fs from 'fs'
 import { tests, registerTestDomain, getDomain } from './tests'
 import { StoreEvent, Provider } from '../types'
@@ -22,6 +23,8 @@ const providers: { [key: string]: ProviderHelper } = {
   postgresLimit: createLimitPostgres(),
   neo4j: createNeo(),
   neo4jLimit: createNeoLimit(),
+  neo4jv3: createNeoV3(),
+  neo4jv3Limit: createNeoV3Limit(),
 }
 
 describe('provider tests', () => {
@@ -65,7 +68,8 @@ function match(actual: any, expected: any) {
   }
 }
 
-async function setupDomains() {
+async function setupDomains(this: any) {
+  this.timeout(10000)
   for (const [name, providerAsync] of Object.entries(providers)) {
     const provider = await providerAsync
     registerTestDomain(name, provider)
@@ -169,6 +173,28 @@ async function createNeoLimit() {
   const db = await util.createTestNeoDB('NeoLimit')
   const provider = neo.createProvider<ExampleEv>({
     limit: 1,
+    bookmarks: db.bookmarks,
+    events: db.events,
+    session: db.session,
+  })
+
+  return provider
+}
+
+async function createNeoV3() {
+  const db = await util.createTestNeoV3DB('NeoV3')
+  const provider = neov3.createProvider<ExampleEv>({
+    bookmarks: db.bookmarks,
+    events: db.events,
+    session: db.session,
+  })
+
+  return provider
+}
+
+async function createNeoV3Limit() {
+  const db = await util.createTestNeoV3DB('NeoV3Limit')
+  const provider = neov3.createProvider<ExampleEv>({
     bookmarks: db.bookmarks,
     events: db.events,
     session: db.session,

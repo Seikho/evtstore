@@ -4,6 +4,7 @@ import * as neo from 'neo4j-driver'
 import { MongoClient } from 'mongodb'
 import { config } from 'dotenv'
 import { migrate } from '../../provider/neo4j'
+import { migrate as migrateV3 } from '../../provider/neo4j-v3'
 
 try {
   config({ path: '.env' })
@@ -85,6 +86,22 @@ export async function createTestNeoDB(dbName: string) {
   await session.run(`MATCH (n: ${bookmarks}) DETACH DELETE n`)
 
   await migrate({ session, events, bookmarks })
+
+  return { session, events, bookmarks }
+}
+
+export async function createTestNeoV3DB(dbName: string) {
+  const events = `${dbName}Events`
+  const bookmarks = `${dbName}Bookmarks`
+
+  const port = process.env.NEOV3_PORT
+  const client = neo.driver(`bolt://localhost:${port}`, neo.auth.basic('neo4j', 'admin'))
+  const session = client.session({ defaultAccessMode: neo.session.WRITE })
+
+  await session.run(`MATCH (n: ${events}) DETACH DELETE n`)
+  await session.run(`MATCH (n: ${bookmarks}) DETACH DELETE n`)
+
+  await migrateV3({ session, events, bookmarks })
 
   return { session, events, bookmarks }
 }

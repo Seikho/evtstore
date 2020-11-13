@@ -113,7 +113,7 @@ export async function migrate(opts: MigrateOptions) {
     if (opts.events) {
       const eventsExists = await trx.schema.hasTable(opts.events)
       if (!eventsExists) {
-        await trx.schema.createTable(opts.events, (tbl) => {
+        const q1 = trx.schema.createTable(opts.events, (tbl) => {
           tbl.bigIncrements('position').primary()
           tbl.integer('version')
           tbl.string('stream')
@@ -121,11 +121,12 @@ export async function migrate(opts: MigrateOptions) {
           tbl.dateTime('timestamp')
           tbl.text('event')
         })
-
-        await trx.schema.table(opts.events, (tbl) => {
+        const q2 = trx.schema.table(opts.events, (tbl) => {
           tbl.unique(['stream', 'position'])
           tbl.unique(['stream', 'aggregate_id', 'version'])
         })
+        await q1
+        await q2
       }
     }
 
@@ -133,10 +134,11 @@ export async function migrate(opts: MigrateOptions) {
       const bookmarkExists = await trx.schema.hasTable(opts.bookmarks)
 
       if (!bookmarkExists) {
-        await trx.schema.createTable(opts.bookmarks, (tbl) => {
+        const q1 = trx.schema.createTable(opts.bookmarks, (tbl) => {
           tbl.string('bookmark').primary()
           tbl.bigInteger('position')
         })
+        await q1
       }
     }
 
