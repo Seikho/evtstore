@@ -16,8 +16,9 @@ export function createProvider<E extends Event>(
     bms.set(bm, pos)
   }
 
-  const getEventsFrom = async (stream: string | string[], pos: number) => {
-    return events.filter((ev) => toArray(stream).includes(ev.stream) && ev.position > pos)
+  const getEventsFrom = async (stream: string | string[], pos: number, limit: number) => {
+    const results = events.filter((ev) => toArray(stream).includes(ev.stream) && ev.position > pos)
+    return limit ? results.slice(0, limit) : results
   }
 
   const getEventsFor = async (stream: string, id: string, fromPosition?: number) => {

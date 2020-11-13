@@ -77,7 +77,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return parsed
     },
-    getEventsFrom: async (stream, pos) => {
+    getEventsFrom: async (stream, pos, lim) => {
       const streams = (Array.isArray(stream) ? stream : [stream]).map((stream) => `'${stream}'`)
       const params: any = { pos: !pos ? new Date(0).toISOString() : pos }
       const query = `
@@ -85,7 +85,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         WHERE ev.stream IN [${streams.join(', ')}]
         AND ev.position > datetime($pos)
       `
-      const limit = opts.limit ? `LIMIT ${opts.limit}` : ''
+      const limit = lim ?? opts.limit ? `LIMIT ${opts.limit}` : ''
 
       const events = await run<any>(
         `
@@ -158,22 +158,18 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
 export async function migrate(opts: MigrateOptions) {
   const session = await opts.session
-  try {
-    const trx = session.beginTransaction()
 
-    await trx.run(`CREATE INDEX ON :${opts.events}(stream, position)`)
+  const trx = session.beginTransaction()
 
-    await trx.run(`CREATE INDEX ON :${opts.events}(stream, aggregateId, position)`)
+  await trx.run(`CREATE INDEX ON :${opts.events}(stream, position)`)
 
-    await trx.run(`CREATE CONSTRAINT ON (ev: ${opts.events}) ASSERT ev._streamPos IS UNIQUE`)
+  await trx.run(`CREATE INDEX ON :${opts.events}(stream, aggregateId, position)`)
 
-    await trx.run(`CREATE CONSTRAINT ON (ev: ${opts.events}) ASSERT ev._streamIdVersion IS UNIQUE`)
+  await trx.run(`CREATE CONSTRAINT ON (ev: ${opts.events}) ASSERT ev._streamPos IS UNIQUE`)
 
-    await trx.commit()
-  } catch (ex) {
-    console.log('Failed to V3 migrate')
-    throw ex
-  }
+  await trx.run(`CREATE CONSTRAINT ON (ev: ${opts.events}) ASSERT ev._streamIdVersion IS UNIQUE`)
+
+  await trx.commit()
 }
 
 export async function cypher<T = unknown>(

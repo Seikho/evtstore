@@ -45,14 +45,15 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
       return results
     },
 
-    getEventsFrom: async (stream, position) =>
+    getEventsFrom: async (stream, position, lim) =>
       events.then((coll) => {
         const query = coll
           .find({ stream: { $in: toArray(stream) }, position: { $gt: position } })
           .sort({ position: 1 })
 
-        if (opts.limit) {
-          query.limit(opts.limit)
+        const limit = lim ?? opts.limit
+        if (limit) {
+          query.limit(limit)
         }
 
         return query.toArray()

@@ -57,7 +57,8 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const rows = await query
       return rows.map(mapToEvent)
     },
-    getEventsFrom: async (stream, position) => {
+    getEventsFrom: async (stream, position, lim) => {
+      const limit = lim ?? opts.limit
       const query = opts
         .events()
         .select()
@@ -65,7 +66,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         .andWhere('position', '>', position)
         .orderBy('position', 'asc')
 
-      if (opts.limit) query.limit(opts.limit)
+      if (limit) query.limit(limit)
 
       const events = await query
 

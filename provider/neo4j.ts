@@ -77,7 +77,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return parsed
     },
-    getEventsFrom: async (stream, pos) => {
+    getEventsFrom: async (stream, pos, lim) => {
       const streams = (Array.isArray(stream) ? stream : [stream]).map((stream) => `'${stream}'`)
       const params: any = { pos: !pos ? new Date(0).toISOString() : pos }
       const query = `
@@ -85,7 +85,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         WHERE ev.stream IN [${streams.join(', ')}]
         AND ev.position > datetime($pos)
       `
-      const limit = opts.limit ? `LIMIT ${opts.limit}` : ''
+      const limit = lim ?? opts.limit ? `LIMIT ${opts.limit}` : ''
 
       const events = await run<any>(
         `
