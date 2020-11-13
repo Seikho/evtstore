@@ -1,6 +1,6 @@
 {
   "name": "evtstore",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
