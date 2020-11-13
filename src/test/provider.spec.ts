@@ -11,33 +11,66 @@ import { Bookmark, migrate, createProvider } from '../../provider/mongo'
 import { ExampleEv } from './example'
 import { expect } from 'chai'
 
-type ProviderHelper = Provider<ExampleEv> | Promise<Provider<ExampleEv>>
-
-const providers: { [key: string]: ProviderHelper } = {
-  memory: Promise.resolve(memory.createProvider<ExampleEv>()),
-  mongo: createMongo(),
-  mongoLimit: createLimitedMongo(),
-  sqliteMemory: createSqliteMemory(),
-  sqliteFile: createSqliteFile(),
-  postgres: createPostgres(),
-  postgresLimit: createLimitPostgres(),
-  neo4j: createNeo(),
-  neo4jLimit: createNeoLimit(),
-  neo4jv3: createNeoV3(),
-  neo4jv3Limit: createNeoV3Limit(),
-}
+const providers: ProviderTest[] = [
+  { name: 'memory', provider: () => Promise.resolve(memory.createProvider<ExampleEv>()) },
+  {
+    name: 'mono',
+    provider: createMongo,
+  },
+  {
+    name: 'mongoLimit',
+    provider: createLimitedMongo,
+  },
+  {
+    name: 'sqliteMemory',
+    provider: createSqliteMemory,
+  },
+  {
+    name: 'sqliteFile',
+    provider: createSqliteFile,
+  },
+  {
+    name: 'postgres',
+    provider: createPostgres,
+  },
+  {
+    name: 'postgresLimit',
+    provider: createLimitPostgres,
+  },
+  {
+    name: 'neo4j',
+    provider: createNeo,
+  },
+  {
+    name: 'neo4jLimit',
+    provider: createNeoLimit,
+  },
+  {
+    name: 'neo4j.v3',
+    provider: createNeoV3,
+  },
+  {
+    name: 'neo4jLimit.v3',
+    provider: createNeoV3Limit,
+  },
+]
 
 describe('provider tests', () => {
-  before(setupDomains)
+  for (const prv of providers) {
+    describe(`::${prv.name}`, function (this: any) {
+      this.timeout(10000)
 
-  for (const name in providers) {
-    describe(`::${name}`, () => {
       for (const { will, input, agg, model, assert } of tests) {
-        it(`${name}::${will}`, async () => {
-          const domain = getDomain(name)!
-          const provider = await providers[name]
+        it(`${prv.name}::${will}`, async () => {
+          if (!prv.cache) {
+            prv.cache = await prv.provider()
+            registerTestDomain(prv.name, prv.cache)
+          }
+
+          const provider = prv.cache
+          const domain = getDomain(prv.name)!
           for (const func of input) {
-            await func(domain, provider, name)
+            await func(domain, provider, prv.name)
           }
 
           if (agg) {
@@ -53,7 +86,7 @@ describe('provider tests', () => {
           }
 
           if (assert) {
-            await assert(domain, provider, name)
+            await assert(domain, provider, prv.name)
           }
         })
       }
@@ -65,14 +98,6 @@ function match(actual: any, expected: any) {
   for (const key in actual) {
     if (key === 'id') continue
     expect(actual[key], key).to.equal(expected[key])
-  }
-}
-
-async function setupDomains(this: any) {
-  this.timeout(10000)
-  for (const [name, providerAsync] of Object.entries(providers)) {
-    const provider = await providerAsync
-    registerTestDomain(name, provider)
   }
 }
 
@@ -201,4 +226,10 @@ async function createNeoV3Limit() {
   })
 
   return provider
+}
+
+type ProviderTest = {
+  name: string
+  provider: () => Promise<Provider<ExampleEv>>
+  cache?: Provider<ExampleEv>
 }
