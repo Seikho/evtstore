@@ -129,7 +129,7 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
      * - retrieve and update bookmarks
      */
     provider: createProvider({
-      onError: (err, stream, bookmark) => {
+      onError: (err, stream, bookmark, event) => {
         console.error(`Handler "${stream}:${bookmark}" failed: `, err)
       },
     }),

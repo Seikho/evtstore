@@ -61,7 +61,12 @@ export class EventHandler<E extends Event> implements Handler<E> {
     for (const event of events) {
       const handler = this.handlers.get(event.event.type)
       if (handler) {
-        await handler(event.aggregateId, event.event, toMeta(event))
+        try {
+          await handler(event.aggregateId, event.event, toMeta(event))
+        } catch (ex) {
+          ex.event = event
+          throw ex
+        }
       }
       this.position = event.position
       await this.setPosition()
@@ -104,7 +109,9 @@ export class EventHandler<E extends Event> implements Handler<E> {
       const handled = await this.runOnce()
       setTimeout(this.run, handled === 0 ? POLL : 0)
     } catch (ex) {
-      await this.provider.then((prv) => prv.onError(ex, this.streams.join(', '), this.bookmark))
+      await this.provider.then((prv) =>
+        prv.onError(ex, this.streams.join(', '), this.bookmark, ex.event)
+      )
       setTimeout(this.run, CRASH)
     }
   }

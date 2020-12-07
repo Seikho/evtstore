@@ -12,7 +12,12 @@ export type EventMeta = {
   aggregateId: string
 }
 
-export type ErrorCallback = (err: any, stream: string, bookmark: string) => any
+export type ErrorCallback = (
+  err: any,
+  stream: string,
+  bookmark: string,
+  event?: Event & { [key: string]: any }
+) => any
 
 type ID = { aggregateId: string }
 
