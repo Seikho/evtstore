@@ -1,4 +1,4 @@
-import { Event, Provider, Ext, Handler, EventMeta } from './types'
+import { Event, Provider, Ext, Handler, EventMeta, HandlerBookmark } from './types'
 import { toMeta, MemoryBookmark } from './common'
 import { toArray } from '../provider/util'
 
@@ -7,12 +7,12 @@ const CRASH = 10000
 
 type Options<E extends Event> = {
   stream: string | string[]
-  bookmark: string
+  bookmark: HandlerBookmark
   provider: Provider<E> | Promise<Provider<E>>
 }
 
 export class EventHandler<E extends Event> implements Handler<E> {
-  private bookmark: string
+  private bookmark: HandlerBookmark
   private streams: string[]
   private provider: Promise<Provider<E>>
   private position: any
@@ -88,7 +88,11 @@ export class EventHandler<E extends Event> implements Handler<E> {
       return position
     }
 
-    return this.provider.then((prv) => prv.getPosition(this.bookmark))
+    if (typeof this.bookmark === 'string') {
+      return this.provider.then((prv) => prv.getPosition(this.bookmark as string))
+    }
+
+    return this.bookmark.getPosition()
   }
 
   setPosition = async () => {
@@ -96,7 +100,12 @@ export class EventHandler<E extends Event> implements Handler<E> {
       return
     }
 
-    await this.provider.then((prv) => prv.setPosition(this.bookmark, this.position))
+    if (typeof this.bookmark === 'string') {
+      await this.provider.then((prv) => prv.setPosition(this.bookmark as string, this.position))
+      return
+    }
+
+    await this.bookmark.setPosition(this.position)
   }
 
   run = async () => {
@@ -109,8 +118,9 @@ export class EventHandler<E extends Event> implements Handler<E> {
       const handled = await this.runOnce()
       setTimeout(this.run, handled === 0 ? POLL : 0)
     } catch (ex) {
+      const bookmarkName = typeof this.bookmark === 'string' ? this.bookmark : this.bookmark.name
       await this.provider.then((prv) =>
-        prv.onError(ex, this.streams.join(', '), this.bookmark, ex.event)
+        prv.onError(ex, this.streams.join(', '), bookmarkName, ex.event)
       )
       setTimeout(this.run, CRASH)
     }

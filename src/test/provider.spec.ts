@@ -14,7 +14,7 @@ import { expect } from 'chai'
 const providers: ProviderTest[] = [
   { name: 'memory', provider: () => Promise.resolve(memory.createProvider<ExampleEv>()) },
   {
-    name: 'mono',
+    name: 'mongo',
     provider: createMongo,
   },
   {

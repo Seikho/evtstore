@@ -4,6 +4,31 @@ export type Aggregate = {}
 
 export type StoreEvent<T = unknown> = EventMeta & { event: T }
 
+export type ProviderBookmark = {
+  readonly name: string
+  getPosition(): Promise<any>
+  setPosition(position: any): Promise<void>
+}
+
+export type DomainOptions<E extends Event, A extends Aggregate> = {
+  aggregate: () => A
+  stream: string
+  fold: Fold<E, A>
+  provider: Provider<E> | Promise<Provider<E>>
+  useCache?: boolean
+}
+
+export type StreamsHandler<T extends { [key: string]: Event }> = <
+  TStream extends keyof T,
+  TType extends T[TStream]['type']
+>(
+  stream: TStream,
+  type: TType,
+  handler: (id: string, event: Ext<T[TStream], TType>, meta: EventMeta) => any
+) => void
+
+export type HandlerBookmark = string | ProviderBookmark
+
 export type EventMeta = {
   stream: string
   position: any

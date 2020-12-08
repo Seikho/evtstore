@@ -1,4 +1,6 @@
-export { createDomain, createHandler } from './src/domain'
+export { createDomain } from './src/domain'
+export { createHandler } from './src/create-handler'
+export { createBookmark } from './src/create-bookmark'
 export {
   Domain,
   Provider,
