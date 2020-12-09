@@ -69,7 +69,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const parsed = events.map((ev) => ({
         stream: ev.stream,
         position: ev.position,
-        version: ev.version,
+        version: toNumber(ev.version),
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
@@ -97,7 +97,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const parsed = events.map((ev) => ({
         stream: ev.stream,
         position: ev.position,
-        version: ev.version,
+        version: toNumber(ev.version),
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
@@ -230,3 +230,7 @@ function sanitise(key: string) {
 }
 
 function noop() {}
+
+function toNumber(value: any) {
+  return neo.isInt(value) ? value.toInt() : value
+}
