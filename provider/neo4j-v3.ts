@@ -11,7 +11,7 @@ export type Bookmark = {
 
 export type Options = {
   limit?: number
-  session: neo.Session | Promise<neo.Session>
+  client: neo.Driver | Promise<neo.Driver>
   onError?: ErrorCallback
 
   /** Bookmarks label */
@@ -29,8 +29,8 @@ export type MigrateOptions = {
 
 export function createProvider<E extends Event>(opts: Options): Provider<E> {
   const onError = opts.onError || noop
-  const session = opts.session
-  const run = <T = unknown>(query: string, params?: {}) => cypher<T>(session, query, params)
+  const client = opts.client
+  const run = <T = unknown>(query: string, params?: {}) => cypher<T>(client, query, params)
 
   return {
     limit: opts.limit,
@@ -106,7 +106,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       return parsed
     },
     append: async (stream, id, version, newEvents) => {
-      const sess = await opts.session
+      const client = await opts.client
 
       const storeEvents: StoreEvent<E>[] = newEvents.map((event, i) => ({
         stream,
@@ -119,7 +119,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       for (const event of storeEvents) {
         try {
           await cypher(
-            sess,
+            client,
             `
             WITH datetime.transaction() as curr, $stream + "_" + toString(datetime.transaction()) as streampos
             CREATE (ev: ${opts.events} {
@@ -173,12 +173,14 @@ export async function migrate(opts: MigrateOptions) {
 }
 
 export async function cypher<T = unknown>(
-  session: neo.Session | Promise<neo.Session>,
+  client: neo.Driver | Promise<neo.Driver>,
   query: string,
   params?: {}
 ) {
-  const sess = await session
-  const response = await sess.run(query, params)
+  const cli = await client
+  const session = cli.session({ defaultAccessMode: 'WRITE' })
+  const response = await session.run(query, params)
+  session.close()
 
   // Unfortunately the type definitions in neo4j-driver are weak and don't
   // allow us to do any better here
