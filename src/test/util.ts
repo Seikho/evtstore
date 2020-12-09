@@ -85,9 +85,9 @@ export async function createTestNeoDB(dbName: string) {
   await session.run(`MATCH (n: ${events}) DETACH DELETE n`)
   await session.run(`MATCH (n: ${bookmarks}) DETACH DELETE n`)
 
-  await migrate({ session, events, bookmarks })
+  await migrate({ client, events, bookmarks })
 
-  return { session, events, bookmarks }
+  return { client, events, bookmarks }
 }
 
 export async function createTestNeoV3DB(dbName: string) {
@@ -101,7 +101,7 @@ export async function createTestNeoV3DB(dbName: string) {
   await session.run(`MATCH (n: ${events}) DETACH DELETE n`)
   await session.run(`MATCH (n: ${bookmarks}) DETACH DELETE n`)
 
-  await migrateV3({ session, events, bookmarks })
+  await migrateV3({ client, events, bookmarks })
 
-  return { session, events, bookmarks }
+  return { client, events, bookmarks }
 }

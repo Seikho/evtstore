@@ -188,7 +188,7 @@ async function createNeo() {
   const provider = neo.createProvider<ExampleEv>({
     bookmarks: db.bookmarks,
     events: db.events,
-    session: db.session,
+    client: db.client,
   })
 
   return provider
@@ -200,7 +200,7 @@ async function createNeoLimit() {
     limit: 1,
     bookmarks: db.bookmarks,
     events: db.events,
-    session: db.session,
+    client: db.client,
   })
 
   return provider
@@ -211,7 +211,7 @@ async function createNeoV3() {
   const provider = neov3.createProvider<ExampleEv>({
     bookmarks: db.bookmarks,
     events: db.events,
-    session: db.session,
+    client: db.client,
   })
 
   return provider
@@ -222,7 +222,7 @@ async function createNeoV3Limit() {
   const provider = neov3.createProvider<ExampleEv>({
     bookmarks: db.bookmarks,
     events: db.events,
-    session: db.session,
+    client: db.client,
   })
 
   return provider

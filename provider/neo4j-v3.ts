@@ -22,7 +22,7 @@ export type Options = {
 }
 
 export type MigrateOptions = {
-  session: neo.Session | Promise<neo.Session>
+  client: neo.Driver | Promise<neo.Driver>
   bookmarks: string
   events: string
 }
@@ -157,7 +157,8 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 }
 
 export async function migrate(opts: MigrateOptions) {
-  const session = await opts.session
+  const cli = await opts.client
+  const session = await cli.session({ defaultAccessMode: 'WRITE' })
 
   const trx = session.beginTransaction()
 
@@ -170,6 +171,7 @@ export async function migrate(opts: MigrateOptions) {
   await trx.run(`CREATE CONSTRAINT ON (ev: ${opts.events}) ASSERT ev._streamIdVersion IS UNIQUE`)
 
   await trx.commit()
+  await session.close()
 }
 
 export async function cypher<T = unknown>(
@@ -180,7 +182,7 @@ export async function cypher<T = unknown>(
   const cli = await client
   const session = cli.session({ defaultAccessMode: 'WRITE' })
   const response = await session.run(query, params)
-  session.close()
+  await session.close()
 
   // Unfortunately the type definitions in neo4j-driver are weak and don't
   // allow us to do any better here
