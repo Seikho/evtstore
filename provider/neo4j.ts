@@ -42,10 +42,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         { bm }
       )
       if (pos === undefined) return 0
-      return fromDateTime(pos.position)
+      return toInternalPosition(pos.position)
     },
     setPosition: async (bm, pos) => {
-      const position = typeof pos === 'number' ? new Date(pos).toISOString() : pos
+      const position = toNeoPosition(pos)
       await run(
         `
         MERGE (bm: ${opts.bookmarks} { bookmark: $bm })
@@ -56,7 +56,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       )
     },
     getEventsFor: async (stream, id, from) => {
-      const params: any = { stream, id, from: toDatePosition(from || new Date(0).toISOString()) }
+      const params: any = { stream, id, from: toNeoPosition(from) }
       let query = `
         MATCH (ev: ${opts.events})
         WHERE ev.aggregateId = $id
@@ -69,8 +69,8 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       const parsed = events.map((ev) => ({
         stream: ev.stream,
-        position: fromDateTime(ev.position),
-        version: toNumber(ev.version),
+        position: toInternalPosition(ev.position),
+        version: toVersion(ev.version),
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
@@ -80,7 +80,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
     },
     getEventsFrom: async (stream, pos, lim) => {
       const streams = (Array.isArray(stream) ? stream : [stream]).map((stream) => `'${stream}'`)
-      const params: any = { pos: toDatePosition(!pos ? new Date(0).toISOString() : pos) }
+      const params: any = { pos: toNeoPosition(pos) }
       const query = `
         MATCH (ev: ${opts.events})
         WHERE ev.stream IN [${streams.join(', ')}]
@@ -88,17 +88,12 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       `
       const limit = lim ?? opts.limit ? `LIMIT ${opts.limit}` : ''
 
-      const events = await run<any>(
-        `
-        ${query} RETURN ev ORDER BY ev.position ASC ${limit}
-      `,
-        params
-      )
+      const events = await run<any>(`${query} RETURN ev ORDER BY ev.position ASC ${limit}`, params)
 
       const parsed = events.map((ev) => ({
         stream: ev.stream,
-        position: fromDateTime(ev.position),
-        version: toNumber(ev.version),
+        position: toInternalPosition(ev.position),
+        version: toVersion(ev.version),
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
         event: JSON.parse(ev.event),
@@ -232,18 +227,32 @@ function sanitise(key: string) {
 
 function noop() {}
 
-function toNumber(value: any) {
+function toVersion(value: any) {
   return neo.isInt(value) ? value.toInt() : value
 }
 
-function fromDateTime(position: any) {
-  return new Date(position.toString()).valueOf()
-}
+function toNeoPosition(position: any) {
+  if (!position) {
+    return new Date(0).toISOString()
+  }
 
-function toDatePosition(position: any) {
   if (typeof position === 'number') {
     return new Date(position).toISOString()
   }
+
+  if (position instanceof Date) {
+    return position.toISOString()
+  }
+
+  return position
+}
+
+function toInternalPosition(position: any) {
+  if (neo.isDateTime(position) || typeof position === 'string') {
+    return new Date(position.toString()).valueOf()
+  }
+
+  if (isNaN(position)) return 0
 
   return position
 }
