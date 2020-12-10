@@ -42,20 +42,21 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         { bm }
       )
       if (pos === undefined) return 0
-      return pos.position
+      return fromDateTime(pos.position)
     },
     setPosition: async (bm, pos) => {
+      const position = typeof pos === 'number' ? new Date(pos).toISOString() : pos
       await run(
         `
         MERGE (bm: ${opts.bookmarks} { bookmark: $bm })
-        ON CREATE SET bm.position = $pos
-        ON MATCH SET bm.position = $pos
+        ON CREATE SET bm.position = $position
+        ON MATCH SET bm.position = $position
       `,
-        { bm, pos }
+        { bm, position }
       )
     },
     getEventsFor: async (stream, id, from) => {
-      const params: any = { stream, id, from: from || new Date(0).toISOString() }
+      const params: any = { stream, id, from: toDatePosition(from || new Date(0).toISOString()) }
       let query = `
         MATCH (ev: ${opts.events})
         WHERE ev.aggregateId = $id
@@ -68,7 +69,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       const parsed = events.map((ev) => ({
         stream: ev.stream,
-        position: toISOstring(ev.position),
+        position: fromDateTime(ev.position),
         version: toNumber(ev.version),
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
@@ -79,7 +80,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
     },
     getEventsFrom: async (stream, pos, lim) => {
       const streams = (Array.isArray(stream) ? stream : [stream]).map((stream) => `'${stream}'`)
-      const params: any = { pos: !pos ? new Date(0).toISOString() : pos }
+      const params: any = { pos: toDatePosition(!pos ? new Date(0).toISOString() : pos) }
       const query = `
         MATCH (ev: ${opts.events})
         WHERE ev.stream IN [${streams.join(', ')}]
@@ -96,7 +97,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       const parsed = events.map((ev) => ({
         stream: ev.stream,
-        position: toISOstring(ev.position),
+        position: fromDateTime(ev.position),
         version: toNumber(ev.version),
         timestamp: new Date(ev.timestamp),
         aggregateId: ev.aggregateId,
@@ -235,6 +236,14 @@ function toNumber(value: any) {
   return neo.isInt(value) ? value.toInt() : value
 }
 
-function toISOstring(position: any) {
-  return position.toString()
+function fromDateTime(position: any) {
+  return new Date(position.toString()).valueOf()
+}
+
+function toDatePosition(position: any) {
+  if (typeof position === 'number') {
+    return new Date(position).toISOString()
+  }
+
+  return position
 }
