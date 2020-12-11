@@ -1,15 +1,19 @@
-import { EventHandler } from './event-handler'
+import { EventHandler, HandlerHooks } from './event-handler'
 import { EventMeta, HandlerBookmark, Provider, StreamsHandler, Event } from './types'
 
-export function createHandler<Body extends { [key: string]: Event }>(
-  bookmark: HandlerBookmark,
-  streams: Array<keyof Body>,
+type Options<Body extends { [key: string]: Event }> = {
+  bookmark: HandlerBookmark
+  streams: Array<keyof Body>
   provider: Provider<Event>
-) {
+  hooks?: HandlerHooks
+}
+
+export function createHandler<Body extends { [key: string]: Event }>(options: Options<Body>) {
   const handler = new EventHandler({
-    bookmark,
-    provider,
-    stream: streams as string[],
+    bookmark: options.bookmark,
+    provider: options.provider,
+    stream: options.streams as string[],
+    hooks: options.hooks,
   })
 
   type CB = (id: string, event: Event, meta: EventMeta) => any

@@ -5,10 +5,16 @@ import { toArray } from '../provider/util'
 const POLL = 1000
 const CRASH = 10000
 
+export type HandlerHooks = {
+  preRun?: () => Promise<void>
+  postRun?: (events: number, handled: number) => Promise<void>
+}
+
 type Options<E extends Event> = {
   stream: string | string[]
   bookmark: HandlerBookmark
   provider: Provider<E> | Promise<Provider<E>>
+  hooks?: HandlerHooks
 }
 
 export class EventHandler<E extends Event> implements Handler<E> {
@@ -18,10 +24,12 @@ export class EventHandler<E extends Event> implements Handler<E> {
   private position: any
   private running = false
   private handlers = new Map<E['type'], (id: string, ev: E, meta: EventMeta) => Promise<any>>()
+  private hooks?: HandlerHooks
 
   constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
     this.streams = toArray(opts.stream)
+    this.hooks = opts.hooks
 
     if (this.streams.length === 0) {
       throw new Error('Cannot create event handler subscribed to no streams')
@@ -51,18 +59,21 @@ export class EventHandler<E extends Event> implements Handler<E> {
   }
 
   runOnce = async (runningCount = 0): Promise<number> => {
+    await this.hooks?.preRun?.()
     const provider = await this.provider
     if (!this.position) {
       this.position = await this.getPosition()
     }
 
     const events = await provider.getEventsFrom(this.streams, this.position)
+    let eventsHandled = 0
 
     for (const event of events) {
       const handler = this.handlers.get(event.event.type)
       if (handler) {
         try {
           await handler(event.aggregateId, event.event, toMeta(event))
+          eventsHandled++
         } catch (ex) {
           ex.event = event
           throw ex
@@ -75,6 +86,8 @@ export class EventHandler<E extends Event> implements Handler<E> {
     if (events.length > 0) {
       return this.runOnce(events.length + runningCount)
     }
+
+    await this.hooks?.postRun?.(events.length, eventsHandled)
 
     return events.length + runningCount
   }
