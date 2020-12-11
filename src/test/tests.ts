@@ -197,7 +197,11 @@ function getSecondDomain(prv: Provider<ExampleEv>) {
     'test-second': ExampleEv
   }
 
-  const handler = createHandler<Events>('two-handler', [`test-example`, `test-second`], prv)
+  const handler = createHandler<Events>({
+    bookmark: 'two-handler',
+    streams: [`test-example`, `test-second`],
+    provider: prv,
+  })
 
   return { second, handler }
 }
