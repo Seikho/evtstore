@@ -83,11 +83,11 @@ export class EventHandler<E extends Event> implements Handler<E> {
       await this.setPosition()
     }
 
+    await this.hooks?.postRun?.(events.length, eventsHandled)
+
     if (events.length > 0) {
       return this.runOnce(events.length + runningCount)
     }
-
-    await this.hooks?.postRun?.(events.length, eventsHandled)
 
     return events.length + runningCount
   }
