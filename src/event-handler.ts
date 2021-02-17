@@ -17,6 +17,8 @@ type Options<E extends Event> = {
   hooks?: HandlerHooks
 }
 
+type EventCallback<E extends Event> = (id: string, evt: E, meta: EventMeta) => Promise<any>
+
 export class EventHandler<E extends Event> implements Handler<E> {
   private bookmark: HandlerBookmark
   private streams: string[]
@@ -25,6 +27,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
   private running = false
   private handlers = new Map<E['type'], (id: string, ev: E, meta: EventMeta) => Promise<any>>()
   private hooks?: HandlerHooks
+  private allHandlers: Array<EventCallback<E>> = []
 
   constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
@@ -44,6 +47,10 @@ export class EventHandler<E extends Event> implements Handler<E> {
     cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<void>
   ) => {
     this.handlers.set(type, cb as any)
+  }
+
+  handleAll = (cb: (aggregateId: string, event: E, meta: EventMeta) => Promise<void>) => {
+    this.allHandlers.push(cb)
   }
 
   start = () => {
@@ -69,6 +76,16 @@ export class EventHandler<E extends Event> implements Handler<E> {
     let eventsHandled = 0
 
     for (const event of events) {
+      for (const allHandler of this.allHandlers) {
+        try {
+          await allHandler(event.aggregateId, event.event, toMeta(event))
+        } catch (ex) {
+          ex.event = event
+          ex.kind = 'all-handler'
+          throw ex
+        }
+      }
+
       const handler = this.handlers.get(event.event.type)
       if (handler) {
         try {
