@@ -164,9 +164,11 @@ export const tests: Test[] = [
         ++firstCount
       })
 
-      handler.handle('test-second', 'one', async (id) => {
-        if (id !== testId) return
-        ++secondCount
+      handler.handleStream('test-second', {
+        one: async (id) => {
+          if (id !== testId) return
+          ++secondCount
+        },
       })
 
       await command.doOne(testId, { one: 1 })

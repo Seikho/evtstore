@@ -1,5 +1,5 @@
 import { EventHandler, HandlerHooks } from './event-handler'
-import { EventMeta, HandlerBookmark, Provider, StreamsHandler, Event } from './types'
+import { EventMeta, HandlerBookmark, Provider, StreamsHandler, Event, HandlerBody } from './types'
 
 type Options<Body extends { [key: string]: Event }> = {
   bookmark: HandlerBookmark
@@ -17,10 +17,8 @@ export function createHandler<Body extends { [key: string]: Event }>(options: Op
   })
 
   type CB = (id: string, event: Event, meta: EventMeta) => any
-  type StreamCB<S extends keyof Body> = (id: string, event: Body[S], meta: EventMeta) => any
 
   const callbacks = new Map<string, CB>()
-  const streamCallbacks = new Map<keyof Body, StreamCB<any>>()
 
   const handle: StreamsHandler<Body> = (stream, type, callback) => {
     callbacks.set(`${stream}-${type}`, callback as any)
@@ -33,13 +31,10 @@ export function createHandler<Body extends { [key: string]: Event }>(options: Op
     })
   }
 
-  const handleStream = <S extends keyof Body>(stream: S, callback: StreamCB<S>) => {
-    streamCallbacks.set(stream, callback)
-    handler.handleAll((id, ev, meta) => {
-      if (meta.stream !== stream) return
-
-      return callback(id, ev as any, meta)
-    })
+  const handleStream = <S extends keyof Body>(stream: S, handlers: HandlerBody<Body[S]>) => {
+    for (const [type, handler] of Object.entries(handlers)) {
+      handle(stream, type, handler as any)
+    }
   }
 
   return {
