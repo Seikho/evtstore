@@ -1,4 +1,4 @@
-import * as knex from 'knex'
+import { Knex as knex } from 'knex'
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 import { toArray } from './util'

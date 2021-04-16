@@ -20,22 +20,23 @@ type Options<E extends Event> = {
 export class EventHandler<E extends Event> implements Handler<E> {
   private bookmark: HandlerBookmark
   private streams: string[]
-  private provider: Promise<Provider<E>>
+  private provider: Provider<E> = null as any
   private position: any
   private running = false
-  private handlers = new Map<E['type'], (id: string, ev: E, meta: EventMeta) => Promise<any>>()
-  private hooks?: HandlerHooks
+  private handlers: {
+    [eventType: string]: (id: string, ev: E, meta: EventMeta) => Promise<any>
+  } = {}
+  private hooks: HandlerHooks = {}
 
-  constructor(opts: Options<E>) {
+  constructor(private opts: Options<E>) {
     this.bookmark = opts.bookmark
     this.streams = toArray(opts.stream)
-    this.hooks = opts.hooks
+    this.hooks = opts.hooks || {}
 
     if (this.streams.length === 0) {
       throw new Error('Cannot create event handler subscribed to no streams')
     }
 
-    this.provider = Promise.resolve(opts.provider)
     this.run()
   }
 
@@ -43,7 +44,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     type: T,
     cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<void>
   ) => {
-    this.handlers.set(type, cb as any)
+    this.handlers[type] = cb as any
   }
 
   start = () => {
@@ -59,31 +60,34 @@ export class EventHandler<E extends Event> implements Handler<E> {
   }
 
   runOnce = async (runningCount = 0): Promise<number> => {
-    await this.hooks?.preRun?.()
-    const provider = await this.provider
+    if (this.hooks.preRun) {
+      await this.hooks.preRun()
+    }
     if (!this.position) {
       this.position = await this.getPosition()
     }
 
-    const events = await provider.getEventsFrom(this.streams, this.position)
+    const events = await this.provider.getEventsFrom(this.streams, this.position)
     let eventsHandled = 0
 
+    const onError = (ex: any) => {
+      ex.event = events[eventsHandled]
+      throw ex
+    }
+
     for (const event of events) {
-      const handler = this.handlers.get(event.event.type)
+      const handler = this.handlers[event.event.type]
       if (handler) {
-        try {
-          await handler(event.aggregateId, event.event, toMeta(event))
-          eventsHandled++
-        } catch (ex) {
-          ex.event = event
-          throw ex
-        }
+        await handler(event.aggregateId, event.event, toMeta(event)).catch(onError)
+        eventsHandled++
       }
       this.position = event.position
       await this.setPosition()
     }
 
-    await this.hooks?.postRun?.(events.length, eventsHandled)
+    if (this.hooks.postRun) {
+      await this.hooks.postRun(events.length, eventsHandled)
+    }
 
     if (events.length > 0) {
       return this.runOnce(events.length + runningCount)
@@ -96,13 +100,13 @@ export class EventHandler<E extends Event> implements Handler<E> {
     if (this.bookmark === MemoryBookmark) {
       if (this.position) return this.position
       const notExistantBookmark = new Date().toISOString()
-      const position = await this.provider.then((prv) => prv.getPosition(notExistantBookmark))
+      const position = await this.provider.getPosition(notExistantBookmark)
       this.position = position
       return position
     }
 
     if (typeof this.bookmark === 'string') {
-      return this.provider.then((prv) => prv.getPosition(this.bookmark as string))
+      return this.provider.getPosition(this.bookmark as string)
     }
 
     return this.bookmark.getPosition()
@@ -114,7 +118,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     }
 
     if (typeof this.bookmark === 'string') {
-      await this.provider.then((prv) => prv.setPosition(this.bookmark as string, this.position))
+      await this.provider.setPosition(this.bookmark as string, this.position)
       return
     }
 
@@ -122,6 +126,10 @@ export class EventHandler<E extends Event> implements Handler<E> {
   }
 
   run = async () => {
+    if (!this.provider) {
+      this.provider = await Promise.resolve(this.opts.provider)
+    }
+
     if (!this.running) {
       setTimeout(this.run, POLL)
       return
@@ -132,9 +140,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
       setTimeout(this.run, handled === 0 ? POLL : 0)
     } catch (ex) {
       const bookmarkName = typeof this.bookmark === 'string' ? this.bookmark : this.bookmark.name
-      await this.provider.then((prv) =>
-        prv.onError(ex, this.streams.join(', '), bookmarkName, ex.event)
-      )
+      this.provider.onError(ex, this.streams.join(', '), bookmarkName, ex.event)
       setTimeout(this.run, CRASH)
     }
   }

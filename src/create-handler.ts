@@ -47,5 +47,6 @@ export function createHandler<Body extends { [key: string]: Event }>(options: Op
     setPosition: handler.setPosition,
     getPosition: handler.getPosition,
     reset: handler.reset,
+    __handler: handler,
   }
 }

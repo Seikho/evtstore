@@ -1,4 +1,4 @@
-import * as knex from 'knex'
+import { knex } from 'knex'
 import * as sql from '../../provider/knex'
 import * as neo from 'neo4j-driver'
 import { MongoClient } from 'mongodb'

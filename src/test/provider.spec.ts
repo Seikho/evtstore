@@ -1,4 +1,4 @@
-import * as knex from 'knex'
+import { knex } from 'knex'
 import * as util from './util'
 import * as memory from '../../provider/memory'
 import * as sql from '../../provider/knex'
