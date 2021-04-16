@@ -28,13 +28,20 @@ export class EventHandler<E extends Event> implements Handler<E> {
   } = {}
   private hooks: HandlerHooks = {}
 
-  constructor(private opts: Options<E>) {
+  constructor(opts: Options<E>) {
     this.bookmark = opts.bookmark
     this.streams = toArray(opts.stream)
     this.hooks = opts.hooks || {}
+    this.provider = opts.provider as any
 
     if (this.streams.length === 0) {
       throw new Error('Cannot create event handler subscribed to no streams')
+    }
+
+    if ('then' in opts.provider) {
+      opts.provider.then((prv) => {
+        this.provider = prv
+      })
     }
 
     this.run()
@@ -63,6 +70,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     if (this.hooks.preRun) {
       await this.hooks.preRun()
     }
+
     if (!this.position) {
       this.position = await this.getPosition()
     }
@@ -126,10 +134,6 @@ export class EventHandler<E extends Event> implements Handler<E> {
   }
 
   run = async () => {
-    if (!this.provider) {
-      this.provider = await Promise.resolve(this.opts.provider)
-    }
-
     if (!this.running) {
       setTimeout(this.run, POLL)
       return
