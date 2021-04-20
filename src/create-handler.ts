@@ -4,7 +4,7 @@ import { EventMeta, HandlerBookmark, Provider, StreamsHandler, Event, HandlerBod
 type Options<Body extends { [key: string]: Event }> = {
   bookmark: HandlerBookmark
   streams: Array<keyof Body>
-  provider: Provider<Event>
+  provider: Provider<Event> | Promise<Provider<Event>>
   hooks?: HandlerHooks
 }
 
