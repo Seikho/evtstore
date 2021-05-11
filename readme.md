@@ -14,6 +14,13 @@ The design goals were:
 
 To obtain these goals the design is highly opinionated, but still flexible.
 
+## Features
+
+- Pre-written providers for SQL (using Knex), MongoDB, Neo4j, and In-memory (for experimentation)
+- Type safety and inference when implementing and calling domains, handlers, and commands
+- Infrequent/unobtrusive use of generics
+- Consume one or multiple event streams in process managers and read model populators
+
 ## Installation
 
 ```sh
@@ -40,8 +47,6 @@ You can create your own providers. See the existing providers for examples.
 - This can be initalised with an array of `StoredEvent[]`
 
 ### SQL with Knex.js
-
-``
 
 ```ts
 import { createProvider, migrate } from 'evtstore/provider/knex'
@@ -180,6 +185,36 @@ async function example() {
 
   await user.changeName({ name: 'new name' })
 }
+```
+
+## Handling Multiple Streams
+
+You can create process managers and populators that handle multiple event streams.  
+When implementing a handler, the stream name and event type are type safe. The `evtstore` types will narrow the valid event types you can use after providing the event stream.
+
+```ts
+import { createHandler } from 'evtstore'
+import { createProvider } from 'evtstore/provider/mongo'
+
+type EventMap = {
+  users: UserEvent
+  game: GameEvent
+  profile: ProfileEvent
+}
+
+const myHandler = createHandler<EventMap>({
+  bookmark: 'my-bookmark',
+  provider: createProvider({ ... }),
+  streams: ['users', 'game', 'profile']
+})
+
+// The compiler will raise an error if you provide an imcompatible stream/event cominbation
+myHandler.handle('users', 'UserCreated', async (id, event) => {
+  ...
+})
+
+myHandler.start()
+
 ```
 
 ## License
