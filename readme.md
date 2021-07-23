@@ -29,6 +29,17 @@ To obtain these goals the design is highly opinionated, but still flexible.
 > npm i evtstore
 ```
 
+## Running Tests
+
+```sh
+# Run all supported databases
+> yarn up
+> yarn build
+> yarn test
+# Tear down databases
+> yarn down
+```
+
 `evtstore` is typed with TypeScript and comes with multiple storage "providers":
 
 **See `src/test/util.ts` and `provider.spec.ts` for examples**
