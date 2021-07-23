@@ -123,5 +123,5 @@ type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
 type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & { type: T }
 
 export type HandlerBody<E extends Event> = {
-  [evt in E['type']]?: (id: string, evt: ExtCmd<E, evt>, meta: EventMeta) => Promise<any>
+  [evt in E['type']]?: (id: string, evt: Ext<E, evt>, meta: EventMeta) => Promise<any>
 }
