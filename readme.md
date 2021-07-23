@@ -1,6 +1,6 @@
 # EvtStore
 
-> "Pretty Type Safe(tm)" CQRS and Event Sourcing for Node.js with TypeScript
+> Type safe CQRS and Event Sourcing for Node.js with TypeScript
 
 ## Why
 
@@ -126,7 +126,7 @@ export const userDomain = createDomain<UserEvent, UserAggregate, UserCommand>(
   {
     stream: 'users',
     // Aggregate function return a new and empty aggregate
-    aggregate: () => ({ name: string }),
+    aggregate: () => ({ name: '' }),
 
     /**
      * Providers:
