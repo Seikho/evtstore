@@ -87,6 +87,7 @@ export type Handler<E extends Event> = {
     type: T,
     cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<any>
   ) => void
+  name: string
 }
 
 export type Ext<E extends Event, T extends E['type']> = E extends {

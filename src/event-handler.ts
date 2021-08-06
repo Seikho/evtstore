@@ -18,6 +18,7 @@ type Options<E extends Event> = {
 }
 
 export class EventHandler<E extends Event> implements Handler<E> {
+  name: string
   private bookmark: HandlerBookmark
   private streams: string[]
   private provider: Provider<E> = null as any
@@ -33,6 +34,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.streams = toArray(opts.stream)
     this.hooks = opts.hooks || {}
     this.provider = opts.provider as any
+    this.name = typeof opts.bookmark === 'string' ? opts.bookmark : opts.bookmark.name
 
     if (this.streams.length === 0) {
       throw new Error('Cannot create event handler subscribed to no streams')
