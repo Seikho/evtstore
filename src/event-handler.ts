@@ -144,7 +144,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     try {
       const handled = await this.runOnce()
       setTimeout(this.run, handled === 0 ? POLL : 0)
-    } catch (ex) {
+    } catch (ex: any) {
       const bookmarkName = typeof this.bookmark === 'string' ? this.bookmark : this.bookmark.name
       this.provider.onError(ex, this.streams.join(', '), bookmarkName, ex.event)
       setTimeout(this.run, CRASH)

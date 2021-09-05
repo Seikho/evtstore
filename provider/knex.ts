@@ -99,7 +99,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
         }
 
         return storeEvents
-      } catch (ex) {
+      } catch (ex: any) {
         // TODO: Verify version conflict error
         throw new VersionError(ex.message)
       }

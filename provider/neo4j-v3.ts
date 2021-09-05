@@ -143,7 +143,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
               streamIdVersion: `${stream}_${id}_${event.version}`,
             }
           )
-        } catch (ex) {
+        } catch (ex: any) {
           if (ex instanceof neo.Neo4jError === false) throw ex
           if (ex.code === 'Neo.ClientError.Schema.ConstraintValidationFailed') {
             throw new VersionError(ex.message)
