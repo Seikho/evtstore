@@ -1,6 +1,6 @@
 {
   "name": "evtstore",
-  "version": "10.0.5",
+  "version": "10.1.0",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
@@ -37,6 +37,7 @@
     "@types/chai": "^4.2.3",
     "@types/dotenv": "^6.1.1",
     "@types/mocha": "^5.2.7",
+    "@types/pg": "^8.6.1",
     "chai": "^4.2.0",
     "dotenv": "^8.1.0",
     "knex": "^0.95.4",

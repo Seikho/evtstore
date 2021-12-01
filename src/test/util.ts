@@ -1,10 +1,12 @@
 import { knex } from 'knex'
 import * as sql from '../../provider/knex'
+import * as pg from '../../provider/pg'
 import * as neo from 'neo4j-driver'
 import { MongoClient } from 'mongodb'
 import { config } from 'dotenv'
 import { migrate } from '../../provider/neo4j'
 import { migrate as migrateV3 } from '../../provider/neo4j-v3'
+import { Client, Pool } from 'pg'
 
 try {
   config({ path: '.env' })
@@ -31,7 +33,43 @@ export async function getTestMongoDB(dbName: string) {
   return { db, client }
 }
 
-export async function getTestPostgresDB(dbName: string) {
+export async function getTestPostgresDb(dbName: string) {
+  const port = Number(process.env.POSTGRES_PORT)
+  const user = process.env.POSTGRES_USER
+  const password = process.env.POSTGRES_PASSWORD
+  if (!port || !user || !password) throw new Error('POSTGRES vars not set')
+
+  const root = new Client({
+    host: dbHost,
+    port,
+    user,
+    password,
+    database: 'postgres',
+  })
+
+  await root.connect()
+
+  try {
+    await root.query(`DROP DATABASE ${dbName}`)
+  } catch (ex) {
+    ex
+  }
+
+  await root.query(`CREATE DATABASE ${dbName} OWNER ${user}`)
+  const client = new Pool({
+    host: dbHost,
+    port,
+    user,
+    password,
+    database: dbName,
+  })
+
+  await pg.migrate({ client, events: 'events', bookmarks: 'bookmarks' })
+
+  return client
+}
+
+export async function getTestKnexDB(dbName: string) {
   const port = Number(process.env.POSTGRES_PORT)
   const user = process.env.POSTGRES_USER
   const password = process.env.POSTGRES_PASSWORD
