@@ -126,3 +126,17 @@ type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & 
 export type HandlerBody<E extends Event> = {
   [evt in E['type']]?: (id: string, evt: Ext<E, evt>, meta: EventMeta) => Promise<any>
 }
+
+export type StorableAggregate<E extends Event = any, A extends Aggregate = any> = {
+  fold: Fold<E, A>
+  aggregate: () => A
+}
+
+export type AggregateStore = { [key: string]: { aggregate: StorableAggregate; stream: string } }
+
+export type ProvidedAggregate<E extends Event, A extends Aggregate> = {
+  stream: string
+  provider: Provider<E> | Promise<Provider<E>>
+  getAggregate: (id: string) => Promise<A & BaseAggregate>
+  toNextAggregate: (prev: A & BaseAggregate, event: StoreEvent<E>) => A & BaseAggregate
+}

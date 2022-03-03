@@ -46,6 +46,13 @@ To obtain these goals the design is highly opinionated, but still flexible.
 
 ## Database Providers
 
+### Supported databases
+
+- Postgres, MySQL, Sqlite with the `knex` library
+- Postgres with the `pg` library
+- Neo4j 3.5 and 4.x
+- MongoDB
+
 ### Custom Providers
 
 You can create your own providers. See the existing providers for examples.
