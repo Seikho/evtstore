@@ -87,6 +87,7 @@ export type Handler<E extends Event> = {
     type: T,
     cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<any>
   ) => void
+  handlers: (body: HandlerBody<E>) => void
   name: string
 }
 
@@ -127,15 +128,20 @@ export type HandlerBody<E extends Event> = {
   [evt in E['type']]?: (id: string, evt: Ext<E, evt>, meta: EventMeta) => Promise<any>
 }
 
-export type StorableAggregate<E extends Event = any, A extends Aggregate = any> = {
+export type StorableAggregate<
+  E extends Event = any,
+  A extends Aggregate = any,
+  S extends string = string
+> = {
+  stream: S
   fold: Fold<E, A>
   aggregate: () => A
 }
 
-export type AggregateStore = { [key: string]: { aggregate: StorableAggregate; stream: string } }
+export type AggregateStore = { [key: string]: StorableAggregate }
 
-export type ProvidedAggregate<E extends Event, A extends Aggregate> = {
-  stream: string
+export type ProvidedAggregate<E extends Event, A extends Aggregate, S extends string = string> = {
+  stream: S
   provider: Provider<E> | Promise<Provider<E>>
   getAggregate: (id: string) => Promise<A & BaseAggregate>
   toNextAggregate: (prev: A & BaseAggregate, event: StoreEvent<E>) => A & BaseAggregate

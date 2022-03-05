@@ -4,21 +4,25 @@ import {
   Aggregate,
   BaseAggregate,
   StoreEvent,
-  DomainOptions,
   StorableAggregate,
   Fold,
   ProvidedAggregate,
+  Provider,
 } from './types'
 
-export function createAggregate<E extends Event, A extends Aggregate>(
+export function createAggregate<E extends Event, A extends Aggregate, S extends string>(
+  stream: S,
   create: () => A,
   fold: Fold<E, A>
-): StorableAggregate<E, A> {
-  return { aggregate: create, fold }
+): StorableAggregate<E, A, S> {
+  return { stream, aggregate: create, fold }
 }
 
 export function createProvidedAggregate<E extends Event, A extends Aggregate>(
-  opts: DomainOptions<E, A>
+  opts: StorableAggregate<E, A> & {
+    provider: Provider<E> | Promise<Provider<E>>
+    useCache?: boolean
+  }
 ): ProvidedAggregate<E, A> {
   const aggregateCache = new Map<string, { aggregate: A & BaseAggregate; position: any }>()
 

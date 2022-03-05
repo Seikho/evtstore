@@ -33,10 +33,14 @@ export async function getTestMongoDB(dbName: string) {
   return { db, client }
 }
 
+const dbNames: Record<string, number> = {}
+
 export async function getTestPostgresDb(dbName: string) {
-  const port = Number(process.env.POSTGRES_PORT)
-  const user = process.env.POSTGRES_USER
-  const password = process.env.POSTGRES_PASSWORD
+  dbName = safeName(dbName)
+
+  const port = Number(process.env.POSTGRES_PORT || '30002')
+  const user = process.env.POSTGRES_USER || 'admin'
+  const password = process.env.POSTGRES_PASSWORD || 'admin'
   if (!port || !user || !password) throw new Error('POSTGRES vars not set')
 
   const root = new Client({
@@ -70,9 +74,11 @@ export async function getTestPostgresDb(dbName: string) {
 }
 
 export async function getTestKnexDB(dbName: string) {
-  const port = Number(process.env.POSTGRES_PORT)
-  const user = process.env.POSTGRES_USER
-  const password = process.env.POSTGRES_PASSWORD
+  dbName = safeName(dbName)
+
+  const port = Number(process.env.POSTGRES_PORT || '30002')
+  const user = process.env.POSTGRES_USER || 'admin'
+  const password = process.env.POSTGRES_PASSWORD || 'admin'
   if (!port || !user || !password) throw new Error('POSTGRES vars not set')
 
   const root = knex({
@@ -142,4 +148,10 @@ export async function createTestNeoV3DB(dbName: string) {
   await migrateV3({ client, events, bookmarks })
 
   return { client, events, bookmarks }
+}
+
+function safeName(name: string) {
+  if (!dbNames[name]) dbNames[name] = 0
+  dbNames[name]++
+  return `${name}_${dbNames[name]}`
 }

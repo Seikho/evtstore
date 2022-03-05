@@ -1,4 +1,4 @@
-import { Event, Provider, Ext, Handler, EventMeta, HandlerBookmark } from './types'
+import { Event, Provider, Ext, Handler, EventMeta, HandlerBookmark, HandlerBody } from './types'
 import { toMeta, MemoryBookmark } from './common'
 import { toArray } from '../provider/util'
 
@@ -24,7 +24,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
   private provider: Provider<E> = null as any
   private position: any
   private running = false
-  private handlers: {
+  private __handlers: {
     [eventType: string]: (id: string, ev: E, meta: EventMeta) => Promise<any>
   } = {}
   private hooks: HandlerHooks = {}
@@ -53,7 +53,14 @@ export class EventHandler<E extends Event> implements Handler<E> {
     type: T,
     cb: (aggregateId: string, event: Ext<E, T>, meta: EventMeta) => Promise<void>
   ) => {
-    this.handlers[type] = cb as any
+    this.__handlers[type] = cb as any
+  }
+
+  handlers = (body: HandlerBody<E>) => {
+    const keys = Object.keys(body) as Array<E['type']>
+    for (const key of keys) {
+      this.__handlers[key] = body[key] as any
+    }
   }
 
   start = () => {
@@ -86,7 +93,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     }
 
     for (const event of events) {
-      const handler = this.handlers[event.event.type]
+      const handler = this.__handlers[event.event.type]
       if (handler) {
         await handler(event.aggregateId, event.event, toMeta(event)).catch(onError)
         eventsHandled++

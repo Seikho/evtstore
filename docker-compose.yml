@@ -25,12 +25,6 @@ services:
     environment:
       - 'NEO4J_AUTH=neo4j/admin'
 
-  pgweb:
-    image: sosedoff/pgweb:latest
-    restart: always
-    ports:
-      - '30005:8081'
-
   neov3:
     image: neo4j:3.5
     restart: always

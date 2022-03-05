@@ -1,5 +1,6 @@
 import { CommandHandler } from '..'
 import { createProvidedAggregate } from './create-aggregate'
+import { EventHandler } from './event-handler'
 import {
   Aggregate,
   AggregateStore,
@@ -10,6 +11,8 @@ import {
   Provider,
   StorableAggregate,
   Event,
+  HandlerBookmark,
+  EventMeta,
 } from './types'
 
 type StoreOpts = {
@@ -17,29 +20,33 @@ type StoreOpts = {
   useCache?: boolean
 }
 
-// type ExtStoreAgg<T> = T extends StorableAggregate<any, infer A> ? A : never
-// type ExtStoreEvt<T> = T extends StorableAggregate<infer E, any> ? E : never
+type StreamEvents<T extends AggregateStore> = { [K in ExtStreams<T>]: StreamAgg<T, K> }
 
-// type StoreAggregate<E extends Event, A extends Aggregate> = {
-//   getAggregate: (id: string) => Promise<A & BaseAggregate>
-//   toNextAggregate: (prev: A & BaseAggregate, event: StoreEvent<E>) => A & BaseAggregate
-// }
+type ExtStoreAgg<T extends StorableAggregate, U extends string> = T extends StorableAggregate<
+  any,
+  any,
+  U
+>
+  ? T
+  : never
+type StreamAgg<T extends AggregateStore, U extends ExtStreams<T>> = ExtStoreAggEvent<
+  ExtStoreAgg<T[keyof T], U>
+>
 
 type ToStoreAgg<T> = T extends StorableAggregate<infer E, infer A> ? ProvidedAggregate<E, A> : never
 
-type Store<T extends AggregateStore> = { [key in keyof T]: ToStoreAgg<T[key]['aggregate']> }
+type Store<T extends AggregateStore> = { [key in keyof T]: ToStoreAgg<T[key]> } & {}
 
-export function createStore<T extends AggregateStore>(opts: StoreOpts, aggregates: T): Store<T> {
-  const store: any = {}
+type ExtStoreAggEvent<T> = T extends StorableAggregate<infer E, any, any> ? E : never
 
-  for (const [
-    key,
-    {
-      aggregate: { aggregate, fold },
-      stream,
-    },
-  ] of Object.entries(aggregates)) {
-    store[key] = createProvidedAggregate({
+type ExtStreams<T extends AggregateStore> = T[keyof T]['stream']
+
+export function createStore<Tree extends AggregateStore>(opts: StoreOpts, aggregates: Tree) {
+  type EventTree = StreamEvents<Tree>
+  const _store: any = {}
+
+  for (const [key, { stream, aggregate, fold }] of Object.entries(aggregates)) {
+    _store[key] = createProvidedAggregate({
       provider: opts.provider,
       aggregate,
       fold,
@@ -48,7 +55,56 @@ export function createStore<T extends AggregateStore>(opts: StoreOpts, aggregate
     })
   }
 
-  return store as Store<T>
+  const createHandler = <S extends ExtStreams<Tree>[]>(bookmark: HandlerBookmark, streams: S) => {
+    type Evt = EventTree[S[number]]
+    type CB = (id: string, event: Event, meta: EventMeta) => any
+
+    const callbacks = new Map<string, CB>()
+    const handler = new EventHandler<Evt>({
+      bookmark,
+      provider: opts.provider,
+      stream: streams,
+    })
+
+    const handlerCallback = (id: string, event: Event, meta: EventMeta) => {
+      const cb = callbacks.get(`${meta.stream}-${event.type}`)
+      if (!cb) return
+
+      return cb(id, event as any, meta)
+    }
+
+    const handle = <Stream extends S[number], Type extends EventTree[Stream]['type']>(
+      stream: Stream,
+      event: Type,
+      callback: (
+        id: string,
+        event: Extract<EventTree[Stream], { type: Type }>,
+        meta: EventMeta
+      ) => any
+    ) => {
+      callbacks.set(`${stream}-${event}`, callback as any)
+
+      handler.handle(event, handlerCallback)
+    }
+
+    return {
+      handle,
+      start: handler.start,
+      stop: handler.stop,
+      runOnce: handler.runOnce,
+      run: handler.run,
+      setPosition: handler.setPosition,
+      getPosition: handler.getPosition,
+      reset: handler.reset,
+    }
+  }
+
+  const store = _store as Store<Tree>
+
+  return {
+    store,
+    createHandler,
+  }
 }
 
 export function createCommands<E extends Event, A extends Aggregate, C extends Command>(
