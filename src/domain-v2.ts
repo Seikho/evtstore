@@ -88,6 +88,7 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
 
     return {
       handle,
+      name: handler.name,
       start: handler.start,
       stop: handler.stop,
       runOnce: handler.runOnce,
@@ -95,6 +96,7 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
       setPosition: handler.setPosition,
       getPosition: handler.getPosition,
       reset: handler.reset,
+      __handller: handler,
     }
   }
 
