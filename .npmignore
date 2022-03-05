@@ -3,3 +3,5 @@ src/test
 .git/
 *.sqlite
 *.log
+example/
+test.env

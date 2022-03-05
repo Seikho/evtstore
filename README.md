@@ -8,6 +8,9 @@
 - [Event Handlers](https://seikho.github.io/evtstore/#/docs/event-handlers)
 - [Command Handlers](https://seikho.github.io/evtstore/#/docs/commands)
 
+**Note: `createDomain` will be migrating to `createDomainV2` in version 11.x**
+The original `createDomain` will be available as `createDomainV1` from 11.x onwards.
+
 ## Why
 
 I reguarly use event sourcing and wanted to lower the barrier for entry and increase productivity for colleagues.  

@@ -9,8 +9,8 @@
       "request": "launch",
       "name": "Launch Mocha Tests",
       "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "args": ["dist/src/**/*.spec.js", "--colors", "--exit", "-t", "4000"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "args": ["src/**/*.spec.js", "--colors", "--exit", "-t", "4000"],
+      "outFiles": ["${workspaceFolder}/**/*.js"],
       "internalConsoleOptions": "openOnSessionStart",
       "sourceMaps": true
     }

@@ -1,10 +1,10 @@
 {
   "name": "evtstore",
-  "version": "10.2.0-pre1",
+  "version": "10.2.0",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
-    "test": "mocha \"dist/src/test/**/*.spec.js\" --exit -t 10000",
+    "test": "mocha \"src/test/**/*.spec.js\" --exit -t 10000",
     "clean": "rimraf \"*.js\" \"*.js.map\" \"*.d.ts\" \"src/**/*.js*\" \"src/**/*.d.ts\" \"provider/**/*.js*\" \"provider/**/*.d.ts\"",
     "prebuild": "yarn clean",
     "build": "tsc",
