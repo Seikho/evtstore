@@ -2,13 +2,16 @@
 
 ### createAggregate
 
-It is import to pass in the `Stream` as a literal to provide the foundation for `Domain.createHandler` intellisense
+It is important to pass in the `Stream` as a literal to provide the foundation for `Domain.createHandler` intellisense
 
 ```ts
-function createAggreate<Event, Aggregate, Stream extends string>(
-  stream: Stream,
-  factory: () => Aggregate,
+type AggregateOptions = {
+  stream: string
+  create: () => Aggreate
   fold: (event: Event, previous: Aggregate) => Partial<Aggregate>
+}
+function createAggreate<Event, Aggregate, Stream extends string>(
+  options: AggregateOptions
 ): StorableAggregate<Event, Aggregate, Stream>
 ```
 
