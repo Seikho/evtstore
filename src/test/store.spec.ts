@@ -11,18 +11,18 @@ type EvtOne = { type: 'inc'; value: number } | { type: 'dec'; value: number }
 type AggTwo = { name: string }
 type EvtTwo = { type: 'set'; value: string }
 
-const one = createAggregate<EvtOne, AggOne, 'one-events'>(
-  'one-events',
-  () => ({ count: 0 }),
-  (evt, agg) => {
+const one = createAggregate<EvtOne, AggOne, 'one-events'>({
+  stream: 'one-events',
+  create: () => ({ count: 0 }),
+  fold: (evt, agg) => {
     switch (evt.type) {
       case 'inc':
         return { count: agg.count + evt.value }
       case 'dec':
         return { count: agg.count - evt.value }
     }
-  }
-)
+  },
+})
 
 const cmdOne: CommandHandler<EvtOne, AggOne, EvtOne> = {
   dec: async (cmd) => {
@@ -33,13 +33,13 @@ const cmdOne: CommandHandler<EvtOne, AggOne, EvtOne> = {
   },
 }
 
-const two = createAggregate<EvtTwo, AggTwo, 'two-events'>(
-  'two-events',
-  () => ({ name: '' }),
-  (evt) => {
+const two = createAggregate<EvtTwo, AggTwo, 'two-events'>({
+  stream: 'two-events',
+  create: () => ({ name: '' }),
+  fold: (evt) => {
     return { name: evt.value }
-  }
-)
+  },
+})
 
 const cmdTwo: CommandHandler<EvtTwo, AggTwo, EvtTwo> = {
   set: async (cmd) => {

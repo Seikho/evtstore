@@ -10,12 +10,16 @@ import {
   Provider,
 } from './types'
 
-export function createAggregate<E extends Event, A extends Aggregate, S extends string>(
-  stream: S,
-  create: () => A,
+type AggOpts<E extends Event, A extends Aggregate, S extends string> = {
+  stream: S
+  create: () => A
   fold: Fold<E, A>
+}
+
+export function createAggregate<E extends Event, A extends Aggregate, S extends string>(
+  opts: AggOpts<E, A, S>
 ): StorableAggregate<E, A, S> {
-  return { stream, aggregate: create, fold }
+  return { stream: opts.stream, aggregate: opts.create, fold: opts.fold }
 }
 
 export function createProvidedAggregate<E extends Event, A extends Aggregate>(
