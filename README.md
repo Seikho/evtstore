@@ -9,6 +9,7 @@
 - [Command Handlers](https://seikho.github.io/evtstore/#/docs/commands)
 
 **Note: `createDomain` will be migrating to `createDomainV2` in version 11.x**
+The `createDomainV2` API solves circular reference issues when importing aggregates.
 The original `createDomain` will be available as `createDomainV1` from 11.x onwards.
 
 ## Why

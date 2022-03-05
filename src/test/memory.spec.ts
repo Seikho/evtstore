@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { createProvider } from '../../provider/memory'
-import { createDomain } from '../domain'
+import { createDomainV1 as createDomain } from '../domain'
 import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 
 const { command, getAggregate, handler } = createDomain<ExampleEv, ExampleAgg, ExampleCmd>(

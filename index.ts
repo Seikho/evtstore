@@ -1,7 +1,7 @@
-export { createDomain, createDomainV1 } from './src/domain'
+export { createDomainV1 } from './src/domain'
 export { createHandler } from './src/create-handler'
 export { createBookmark } from './src/create-bookmark'
-export { createDomainV2, createStore } from './src/domain-v2'
+export { createDomainV2, createDomain } from './src/domain-v2'
 export { createAggregate, createProvidedAggregate } from './src/create-aggregate'
 export { createCommands } from './src/create-command'
 export {

@@ -36,7 +36,7 @@ type ExtStoreAggEvent<T> = T extends StorableAggregate<infer E, any, any> ? E : 
 
 type ExtStreams<T extends AggregateStore> = T[keyof T]['stream']
 
-export function createStore<Tree extends AggregateStore>(opts: StoreOpts, aggregates: Tree) {
+export function createDomain<Tree extends AggregateStore>(opts: StoreOpts, aggregates: Tree) {
   return createDomainV2(opts, aggregates)
 }
 

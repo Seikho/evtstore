@@ -1,7 +1,7 @@
 import { Handler, Provider, Domain } from '../types'
 import { ExampleEv, ExampleAgg, ExampleCmd, exampleFold, exampleCmd } from './example'
 import { BaseAggregate } from '../types'
-import { createDomain } from '../domain'
+import { createDomainV1 as createDomain } from '../domain'
 import { expect } from 'chai'
 import { MemoryBookmark } from '../common'
 import { createHandler } from '../create-handler'
