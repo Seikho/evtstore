@@ -9,6 +9,7 @@ import * as fs from 'fs'
 import { StoreEvent, Provider } from '../types'
 import { Bookmark, migrate, createProvider } from '../../provider/mongo'
 import { ExampleEv } from './example'
+import { safeName } from './util'
 
 export const providers: ProviderTest[] = [
   { name: 'memory', provider: () => Promise.resolve(memory.createProvider<ExampleEv>()) },
@@ -99,14 +100,15 @@ async function createSqliteMemory() {
 }
 
 async function createSqliteFile() {
+  const dbName = safeName('sqlite_test') + '.sqlite'
   try {
-    fs.statSync('test.sqlite')
-    fs.unlinkSync('test.sqlite')
+    fs.statSync(dbName)
+    fs.unlinkSync(dbName)
   } catch (ex) {}
 
   const db = knex({
     client: 'sqlite3',
-    connection: 'test.sqlite',
+    connection: dbName,
     useNullAsDefault: true,
     log: {
       warn(_msg: any) {},

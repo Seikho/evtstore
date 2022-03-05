@@ -12,6 +12,13 @@ import {
 import { EventHandler } from './event-handler'
 import { createProvidedAggregate } from './create-aggregate'
 
+export function createDomainV1<Evt extends Event, Agg extends Aggregate, Cmd extends Command>(
+  opts: DomainOptions<Evt, Agg>,
+  cmd: CommandHandler<Evt, Agg, Cmd>
+) {
+  return createDomain(opts, cmd)
+}
+
 export function createDomain<Evt extends Event, Agg extends Aggregate, Cmd extends Command>(
   opts: DomainOptions<Evt, Agg>,
   cmd: CommandHandler<Evt, Agg, Cmd>

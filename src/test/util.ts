@@ -150,7 +150,7 @@ export async function createTestNeoV3DB(dbName: string) {
   return { client, events, bookmarks }
 }
 
-function safeName(name: string) {
+export function safeName(name: string) {
   if (!dbNames[name]) dbNames[name] = 0
   dbNames[name]++
   return `${name}_${dbNames[name]}`

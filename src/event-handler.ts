@@ -95,7 +95,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     for (const event of events) {
       const handler = this.__handlers[event.event.type]
       if (handler) {
-        await handler(event.aggregateId, event.event, toMeta(event)).catch(onError)
+        await Promise.resolve(handler(event.aggregateId, event.event, toMeta(event))).catch(onError)
         eventsHandled++
       }
       this.position = event.position

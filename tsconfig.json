@@ -2,11 +2,13 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "commonjs",
+    "outDir": "dist",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "declaration": true,
     "inlineSourceMap": true,
     "allowUnreachableCode": false
-  }
+  },
+  "include": ["src/**/*.ts"]
 }

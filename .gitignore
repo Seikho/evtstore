@@ -6,3 +6,4 @@ build/
 *.d.ts
 *.sqlite
 .env
+*.swp

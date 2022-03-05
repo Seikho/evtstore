@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { createAggregate } from '../create-aggregate'
-import { createCommands, createStore } from '../create-store'
+import { createCommands } from '../create-command'
+import { createDomainV2 } from '../domain-v2'
 import { CommandHandler, Provider } from '../types'
 import { providers } from './providers'
 
@@ -47,33 +48,26 @@ const cmdTwo: CommandHandler<EvtTwo, AggTwo, EvtTwo> = {
 }
 
 function create(prv: Promise<Provider<any>>) {
-  const { store, createHandler } = createStore({ provider: prv }, { one, two })
+  const { domain, createHandler } = createDomainV2({ provider: prv }, { one, two })
   return {
-    store,
+    domain,
     createHandler,
     cmd: {
-      one: createCommands(store.one, cmdOne),
-      two: createCommands(store.two, cmdTwo),
+      one: createCommands(domain.one, cmdOne),
+      two: createCommands(domain.two, cmdTwo),
     },
   }
 }
 
-type StoreEx = Cache['store']
-type CmdEx = Cache['cmd']
-
-type Cache = ReturnType<typeof create>
-
-describe.only(`store tests`, () => {
-  let cache: Cache
-  let store: StoreEx
-  let cmd: CmdEx
-
+describe(`store tests`, () => {
   for (const prv of providers) {
-    describe(`::${prv.name}`, function (this: any) {
-      const ones = new Map<string, any>()
-      const twos = new Map<string, any>()
-      const handler = cache.createHandler('abc', ['one-events', 'two-events'])
+    const cache = create(prv.provider())
+    const { domain, cmd } = cache
+    const ones = new Map<string, number>()
+    const twos = new Map<string, string>()
+    const handler = cache.createHandler('abc', ['one-events', 'two-events'])
 
+    describe(`::${prv.name}`, function (this: any) {
       handler.handle('one-events', 'inc', (id, ev) => {
         ones.set(id, ev.value)
       })
@@ -84,12 +78,8 @@ describe.only(`store tests`, () => {
       this.timeout(10000)
 
       it('will retrieve initial aggregates', async () => {
-        cache = create(prv.provider())
-
-        store = cache.store
-        cmd = cache.cmd
-        const left = await store.one.getAggregate('1')
-        const right = await store.two.getAggregate('2')
+        const left = await domain.one.getAggregate('1')
+        const right = await domain.two.getAggregate('2')
         match(left, { version: 0 })
         match(right, { version: 0 })
       })
@@ -97,11 +87,22 @@ describe.only(`store tests`, () => {
       it('will apply a basic command', async () => {
         await cmd.one.inc('1', { value: 1 })
         await cmd.two.set('2', { value: 'two' })
-        const left = await store.one.getAggregate('1')
-        const right = await store.two.getAggregate('2')
+        const left = await domain.one.getAggregate('1')
+        const right = await domain.two.getAggregate('2')
 
         match(left, { version: 1, count: 1 })
         match(right, { version: 1, name: 'two' })
+      })
+
+      it('will evaluate read models', async () => {
+        try {
+          await handler.runOnce()
+          expect(ones.get('1')).to.eq(1)
+          expect(twos.get('2')).to.eq('two')
+        } catch (ex) {
+          console.log(ex)
+          throw ex
+        }
       })
     })
   }
