@@ -1,4 +1,4 @@
-import { Collection, Timestamp, MongoError, FilterQuery } from 'mongodb'
+import { Collection, Timestamp, MongoError, Filter } from 'mongodb'
 import { Event, StoreEvent, Provider, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 import { toArray } from './util'
@@ -31,7 +31,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
     getPosition: (bm) => getPos(bm, bookmarks),
     setPosition: (bm, pos) => setPos(bm, pos, bookmarks),
     getEventsFor: async (stream, id, fromPosition) => {
-      const query: FilterQuery<StoreEvent<E>> = {
+      const query: Filter<StoreEvent<E>> = {
         stream,
         aggregateId: id,
       }
@@ -47,9 +47,11 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
 
     getEventsFrom: async (stream, position, lim) =>
       events.then((coll) => {
-        const query = coll
-          .find({ stream: { $in: toArray(stream) }, position: { $gt: position } })
-          .sort({ position: 1 })
+        const filter = {
+          stream: { $in: toArray(stream) },
+          position: { $gt: position },
+        } as Filter<StoreEvent<E>>
+        const query = coll.find(filter).sort({ position: 1 })
 
         const limit = lim ?? opts.limit
         if (limit) {
@@ -64,7 +66,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
       try {
         const toStore: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
           stream,
-          position: new Timestamp(0, 0),
+          position: new Timestamp({ t: 0, i: 0 }),
           version: version + i,
           timestamp,
           event,
@@ -103,7 +105,7 @@ export async function migrate(
 async function getPos(bm: string, bookmarks: Promise<Collection<Bookmark>>) {
   const record = await bookmarks.then((coll) => coll.findOne({ bookmark: bm }))
   if (record) return record.position
-  return new Timestamp(0, 0)
+  return new Timestamp({ t: 1, i: 0 })
 }
 
 async function setPos(bm: string, pos: Timestamp, bookmarks: Promise<Collection<Bookmark>>) {

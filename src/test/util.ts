@@ -19,10 +19,7 @@ export async function getTestMongoDB(dbName: string) {
   const port = Number(process.env.MONGO_PORT)
   if (isNaN(port)) throw new Error('MONGO_PORT not set')
 
-  const client = await MongoClient.connect(`mongodb://${dbHost}:${port}`, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  const client = await MongoClient.connect(`mongodb://${dbHost}:${port}`)
 
   const db = client.db(dbName)
 
