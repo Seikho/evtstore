@@ -93,3 +93,29 @@ export async function setupEventStore() {
 
 - In memory provider for experimentation.
 - This can be initalised with an array of `StoredEvent[]`
+
+### Neo4j v3.5 and v4
+
+Neo4j providers use the [neo4j-driver package](https://www.npmjs.com/package/neo4j-driver).
+
+Neo4j 3.5 does not support unique constraints across multiple properties.  
+To circumvent this we create properties with the concatenated values that we need to index.
+
+```ts
+import * as neo from 'neo4j-driver'
+
+// Either one of these
+import { createProvider, migrate } from 'evtstore/provider/neo4j-v3'
+import { createProvider, migrate } from 'evtstore/provider/neo4j'
+
+const client = neo.driver(`bolt://localhost:7687`, neo.auth.basic('neo4j', 'admin'))
+
+const events = 'Events'
+const bookmarks = 'Bookmarks'
+
+const provider = createProvider({ client, events, bookmarks })
+
+async function setupEventStore() {
+  await migrate({ client, events, bookmarks })
+}
+```

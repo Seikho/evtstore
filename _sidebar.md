@@ -8,5 +8,5 @@
     - [Knex](docs/providers?id=sql-with-knexjs)
     - [MongoDB](docs/providers?id=mongodb)
     - [In-memory](docs/providers?id=in-memory)
-    - [Neo4j]()
+    - [Neo4j](docs/providers?id=neo4j-v35-and-v4)
   - [Multiple Streams](docs/multiple-streams.md)
