@@ -24,12 +24,6 @@ The design goals were:
 
 To obtain these goals the design is highly opinionated, but still flexible.
 
-## Examples
-
-EvtStore is type-driven to take advantage of type safety and auto completion. We front-load the creation of our `Event`, `Aggregate`, and `Command` types to avoid having to repeatedly import and pass them as generic argument. EvtStore makes use for TypeScript's [mapped types and conditional types](https://www.typescriptlang.org/docs/handbook/2/mapped-types.html) to achieve this.
-
-See [the example folder](https://github.com/Seikho/evtstore/tree/master/example)
-
 ## Supported Databases
 
 See [Providers](https://seikho.github.io/evtstore/#/docs/providers) for more details and examples
@@ -40,6 +34,92 @@ See [Providers](https://seikho.github.io/evtstore/#/docs/providers) for more det
 - MongoDB
 - Neo4j v3.5
 - Neo4j v4
+
+## Examples
+
+EvtStore is type-driven to take advantage of type safety and auto completion. We front-load the creation of our `Event`, `Aggregate`, and `Command` types to avoid having to repeatedly import and pass them as generic argument. EvtStore makes use for TypeScript's [mapped types and conditional types](https://www.typescriptlang.org/docs/handbook/2/mapped-types.html) to achieve this.
+
+```ts
+type UserEvt =
+  | { type: 'created', name: string }
+  | { type: 'disabled' }
+  | { type: 'enabled' }
+type UserAgg = { name: string, enabled: boolean }
+type UserCmd =
+  | { type: 'create': name: string }
+  | { type: 'enable' }
+  | { type: 'disable' }
+
+type PostEvt =
+  | { type: 'postCreated', userId: string, content: string }
+  | { type: 'postArchived' }
+
+type PostAgg = { userId: string, content: string, archived: boolean }
+type PostCmd =
+  | { type: 'createPost', userId: string, content: string }
+  | { type: 'archivedPost', userId: string }
+
+const user = createAggregate<UserEvt, UserAgg, 'users'>({ stream: 'users' }, {
+  create: () => ({ name: '', enabled: false }),
+  fold: (evt) => {
+    switch (evt.type) {
+      case 'created':
+        return { name: evt.name, enabled: true }
+      case 'disabled':
+        return { enabled: false }
+      case 'enabled':
+        return { enabled: true }
+    }
+  }
+})
+
+const post = createAggregate<PostEvt, PostAgg, 'posts'>({ stream: 'posts' }, {
+  create: () => ({ content: '', userId: '', archived: false }),
+  fold: (evt) => {
+    switch (evt.type) {
+      case 'postCreated':
+        return { userId: evt.userId, content: evt.content }
+      case 'postArchived':
+        return { archived: true }
+    }
+  }
+})
+
+const provider = createProvider()
+
+export const { domain, createHandler } = createDomain({ provider }, { user, post })
+
+export const userCmd = createCommands<UserEvt, UserEvt, UserCmd>(domain.user, {
+  async create(cmd, agg) { ... },
+  async disabl(cmd, agg) { ... },
+  async enable(cmd, agg) { ... },
+})
+
+export const postCmd = createCommands<PostEvt, PostAgg, PostCmd>(domain.post, {
+  async createPost(cmd, agg) {
+    if (agg.version) throw new CommandError('Post already exists')
+    const user = await domain.user.getAggregate(cmd.userId)
+    if (!user.version) throw new CommandError('Unauthorized')
+
+    return { type: 'postCreated', content: cmd.content, userId: cmd.userId }
+  },
+  async archivePost(cmd, agg) {
+    if (cmd.userId !== agg.userId) throw new CommandError('Not allowed')
+    if (agg.archived) return
+
+    return { type: 'postArchived' }
+  }
+})
+
+const postModel = createHandler('posts-model', ['posts'])
+postModel.handle('posts', 'postCreated', async (id, event, meta) => {
+  // Insert into database
+})
+postModel.start()
+
+```
+
+See [the example folder](https://github.com/Seikho/evtstore/tree/master/example)
 
 ## API
 

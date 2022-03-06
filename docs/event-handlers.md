@@ -69,3 +69,21 @@ Typically used for integration testing.
 
 Resets the internal bookmark of the event handler.  
 This forces the handler to retrieve the remote state of the bookmark on the next iteration.
+
+## Example
+
+```ts
+import { createHandler } from '...'
+
+const userModel = createHandler('users-model', ['users'])
+
+userModel.handle('users', 'userCreated', async (id, event, meta) => {
+  await mongo.collection('users').insertOne({
+    userId: id,
+    name: event.name,
+    createdAt: meta.timestamp,
+  })
+})
+
+userModel.start()
+```
