@@ -1,6 +1,6 @@
 {
   "name": "evtstore",
-  "version": "11.2.0",
+  "version": "11.3.0",
   "description": "Event Sourcing with Node.JS",
   "main": "index.js",
   "scripts": {
@@ -29,8 +29,7 @@
     "url": "https://github.com/seikho/evtstore/issues"
   },
   "homepage": "https://github.com/seikho/evtstore#readme",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/chai": "^4.2.3",
     "@types/dotenv": "^6.1.1",

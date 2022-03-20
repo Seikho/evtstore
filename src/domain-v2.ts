@@ -1,5 +1,5 @@
 import { createProvidedAggregate } from './create-aggregate'
-import { EventHandler } from './event-handler'
+import { EventHandler, HandlerHooks } from './event-handler'
 import {
   AggregateStore,
   ProvidedAggregate,
@@ -36,6 +36,10 @@ type ExtStoreAggEvent<T> = T extends StorableAggregate<infer E, any, any> ? E : 
 
 type ExtStreams<T extends AggregateStore> = T[keyof T]['stream']
 
+export type HandlerOptions = {
+  hooks?: HandlerHooks
+}
+
 export function createDomain<Tree extends AggregateStore>(opts: StoreOpts, aggregates: Tree) {
   return createDomainV2(opts, aggregates)
 }
@@ -54,7 +58,11 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
     })
   }
 
-  const createHandler = <S extends ExtStreams<Tree>[]>(bookmark: HandlerBookmark, streams: S) => {
+  const createHandler = <S extends ExtStreams<Tree>[]>(
+    bookmark: HandlerBookmark,
+    streams: S,
+    options: HandlerOptions = {}
+  ) => {
     type Evt = EventTree[S[number]]
     type CB = (id: string, event: Event, meta: EventMeta) => any
 
@@ -63,6 +71,7 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
       bookmark,
       provider: opts.provider,
       stream: streams,
+      hooks: options.hooks,
     })
 
     const handlerCallback = (id: string, event: Event, meta: EventMeta) => {
@@ -96,7 +105,7 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
       setPosition: handler.setPosition,
       getPosition: handler.getPosition,
       reset: handler.reset,
-      __handller: handler,
+      __handler: handler,
     }
   }
 
