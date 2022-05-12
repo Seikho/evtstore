@@ -1,4 +1,4 @@
-import { Pool } from 'pg'
+import { Pool, Client } from 'pg'
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
 
@@ -12,6 +12,8 @@ export type MigrateOptions = {
   events?: string
   bookmarks?: string
 }
+
+export type MigrateClientOptions = Omit<MigrateOptions, 'client'> & { client: Client }
 
 export type Options = {
   limit?: number
@@ -128,6 +130,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
   }
 }
 
+/** Migrate using a PG.Pool object */
 export async function migrate(opts: MigrateOptions) {
   if (!opts.bookmarks && !opts.events) return
 
@@ -172,6 +175,58 @@ export async function migrate(opts: MigrateOptions) {
     await trx.query('ROLLBACK')
   } finally {
     trx.release()
+  }
+}
+
+/** Migrate using a PG.Pool object */
+export function migratePool(opts: MigrateOptions) {
+  return migrate(opts)
+}
+
+/** Migrate using a PG.Client object */
+export async function migrateClient(opts: MigrateClientOptions) {
+  if (!opts.bookmarks && !opts.events) return
+
+  const client = opts.client
+
+  try {
+    await client.query('BEGIN')
+    await client.query(
+      `
+      CREATE TABLE "${opts.bookmarks}" (
+        bookmark text PRIMARY KEY,
+        position bigint
+      )
+    `
+    )
+
+    await client.query(
+      `
+      CREATE TABLE "${opts.events}" (
+        position BIGSERIAL PRIMARY KEY,
+        version integer,
+        stream text,
+        aggregate_id text,
+        timestamp timestamp,
+        event text
+      )
+    `
+    )
+
+    await client.query(
+      `CREATE UNIQUE INDEX events_stream_position_unique ON "${opts.events}" (
+      stream, position
+    )`
+    )
+
+    await client.query(`CREATE UNIQUE INDEX events_stream_aggregate_version_unique ON "${opts.events}" (
+      stream, aggregate_id, version
+    )`)
+
+    await client.query('COMMIT')
+  } catch (ex) {
+    await client.query('ROLLBACK')
+    throw ex
   }
 }
 
