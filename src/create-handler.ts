@@ -21,7 +21,7 @@ export function createHandler<Body extends { [key: string]: Event }>(options: Op
   const callbacks = new Map<string, CB>()
 
   const handle: StreamsHandler<Body> = (stream, type, callback) => {
-    callbacks.set(`${stream}-${type}`, callback as any)
+    callbacks.set(`${stream.toString()}-${type}`, callback as any)
 
     handler.handle(type, (id, event, meta) => {
       const cb = callbacks.get(`${meta.stream}-${event.type}`)
