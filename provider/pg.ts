@@ -154,7 +154,7 @@ export async function migrate(opts: MigrateOptions) {
         version integer,
         stream text,
         aggregate_id text,
-        timestamp timestamp,
+        timestamp timestamptz,
         event text
       )
     `
@@ -207,7 +207,7 @@ export async function migrateClient(opts: MigrateClientOptions) {
         version integer,
         stream text,
         aggregate_id text,
-        timestamp timestamp,
+        timestamp timestamptz,
         event text
       )
     `
