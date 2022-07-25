@@ -1,5 +1,5 @@
 import { createProvidedAggregate } from './create-aggregate'
-import { EventHandler, HandlerHooks } from './event-handler'
+import { EventHandler } from './event-handler'
 import {
   AggregateStore,
   ProvidedAggregate,
@@ -8,6 +8,7 @@ import {
   Event,
   HandlerBookmark,
   EventMeta,
+  HandlerHooks,
 } from './types'
 
 type StoreOpts = {
@@ -38,6 +39,12 @@ type ExtStreams<T extends AggregateStore> = T[keyof T]['stream']
 
 export type HandlerOptions = {
   hooks?: HandlerHooks
+
+  /** Start handling events from the end of the stream */
+  tailStream?: boolean
+
+  /** Every time the handler starts, always start from the end of the stream */
+  alwaysTailStream?: boolean
 }
 
 export function createDomain<Tree extends AggregateStore>(opts: StoreOpts, aggregates: Tree) {
@@ -72,6 +79,8 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
       provider: opts.provider,
       stream: streams,
       hooks: options.hooks,
+      tailStream: options.tailStream,
+      alwaysTailStream: options.alwaysTailStream,
     })
 
     const handlerCallback = (id: string, event: Event, meta: EventMeta) => {

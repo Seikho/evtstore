@@ -1,6 +1,7 @@
 import * as neo from 'neo4j-driver'
 import { ErrorCallback, Event, Provider, StoreEvent } from '../src/types'
 import { VersionError } from './error'
+import { toArray } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -82,8 +83,34 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return parsed
     },
+    getLastEventFor: async (stream, id) => {
+      const streams = toArray(stream).map((stream) => `'${stream}'`)
+      const params: any = {}
+
+      let query = `
+        MATCH (ev: ${opts.events})
+        WHERE ev.stream IN [${streams.join(', ')}]`
+
+      if (id) {
+        query += ` AND ev.aggregateId = $id`
+        params.id = id
+      }
+
+      const events = await run<any>(`${query} RETURN ev ORDER BY ev.position DESC LIMIT 1`, params)
+
+      const parsed = events.map((ev) => ({
+        stream: ev.stream,
+        position: toInternalPosition(ev.position),
+        version: toVersion(ev.version),
+        timestamp: new Date(ev.timestamp),
+        aggregateId: ev.aggregateId,
+        event: JSON.parse(ev.event),
+      }))
+
+      return parsed[0]
+    },
     getEventsFrom: async (stream, pos, lim) => {
-      const streams = (Array.isArray(stream) ? stream : [stream]).map((stream) => `'${stream}'`)
+      const streams = toArray(stream).map((stream) => `'${stream}'`)
       const params: any = { pos: toNeoPosition(pos) }
       const query = `
         MATCH (ev: ${opts.events})

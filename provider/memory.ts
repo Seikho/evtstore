@@ -21,6 +21,16 @@ export function createProvider<E extends Event>(
     return limit ? results.slice(0, limit) : results
   }
 
+  const getLastEventFor = async (stream: string | string[], id?: string) => {
+    const streams = toArray(stream)
+
+    for (let i = events.length - 1; i >= 0; i--) {
+      const evt = events[i]
+      if (id && streams.includes(evt.stream) && evt.aggregateId === id) return evt
+      if (streams.includes(evt.stream)) return evt
+    }
+  }
+
   const getEventsFor = async (stream: string, id: string, fromPosition?: number) => {
     const filter =
       fromPosition === undefined
@@ -57,6 +67,7 @@ export function createProvider<E extends Event>(
     setPosition,
     getEventsFor,
     getEventsFrom,
+    getLastEventFor,
     append,
   }
 }

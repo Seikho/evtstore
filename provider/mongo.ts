@@ -44,6 +44,20 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
 
       return results
     },
+    getLastEventFor: async (stream, id) => {
+      const query: Filter<StoreEvent<E>> = {}
+      query.stream = { $in: toArray(stream) }
+
+      if (id) {
+        query.aggregateId = id
+      }
+
+      const results = await events.then((coll) =>
+        coll.find(query).sort({ position: -1 }).limit(1).toArray()
+      )
+
+      return results[0]
+    },
 
     getEventsFrom: async (stream, position, lim) =>
       events.then((coll) => {

@@ -57,6 +57,21 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const rows = await query
       return rows.map(mapToEvent)
     },
+    getLastEventFor: async (stream, aggregateId) => {
+      let query = opts
+        .events()
+        .select()
+        .whereIn('stream', toArray(stream))
+        .orderBy('position', 'desc')
+        .limit(1)
+
+      if (aggregateId) {
+        query = query.andWhere({ aggregate_id: aggregateId })
+      }
+
+      const rows = await query
+      return rows.map(mapToEvent)[0]
+    },
     getEventsFrom: async (stream, position, lim) => {
       const limit = lim ?? opts.limit
       const query = opts

@@ -8,19 +8,29 @@ import {
   BaseAggregate,
   ExecutableAggregate,
   DomainOptions,
+  HandlerHooks,
 } from './types'
 import { EventHandler } from './event-handler'
 import { createProvidedAggregate } from './create-aggregate'
+
+export type HandlerOptsV1 = {
+  tailStream?: boolean
+  alwaysTailStream?: boolean
+  hooks?: HandlerHooks
+}
 
 export function createDomainV1<Evt extends Event, Agg extends Aggregate, Cmd extends Command>(
   opts: DomainOptions<Evt, Agg>,
   cmd: CommandHandler<Evt, Agg, Cmd>
 ): Domain<Evt, Agg, Cmd> {
-  function handler(bookmark: string) {
+  function handler(bookmark: string, options: HandlerOptsV1 = {}) {
     return new EventHandler({
       bookmark,
       provider: opts.provider,
       stream: opts.stream,
+      hooks: options.hooks,
+      tailStream: options.tailStream,
+      alwaysTailStream: options.alwaysTailStream,
     })
   }
 

@@ -15,6 +15,10 @@ export type TestDomain = {
 const domains = new Map<string, TestDomain>()
 
 export function registerTestDomain(name: string, provider: Provider<ExampleEv>) {
+  provider.onError = (err) => {
+    console.error(`[Error:${name}]`, err)
+  }
+
   const domain = createDomain(
     {
       provider,

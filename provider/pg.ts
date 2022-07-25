@@ -67,6 +67,23 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const result = await opts.client.query(query, values)
       return result.rows.map(mapToEvent)
     },
+    getLastEventFor: async (stream, aggregateId) => {
+      const streams = Array.isArray(stream) ? stream : [stream]
+      const params = streams.map((_, i) => `$${i + 1}`).join(', ')
+
+      let query = `select * from "${opts.events}" where stream in (${params})`
+      const values = [...streams]
+
+      if (aggregateId) {
+        query += ` and aggregate_id = $${streams.length + 1}`
+        values.push(aggregateId)
+      }
+
+      query += ` order by position desc limit 1`
+
+      const result = await opts.client.query(query, values)
+      return result.rows.map(mapToEvent)[0]
+    },
     getEventsFrom: async (stream, position, lim) => {
       const streams = Array.isArray(stream) ? stream : [stream]
       const params = streams.map((_, i) => `$${i + 1}`).join(', ')
@@ -101,7 +118,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           storeEvent.aggregateId,
           JSON.stringify(storeEvent.event),
           storeEvent.version,
-          storeEvent.timestamp,
+          storeEvent.timestamp.toISOString(),
         ])
 
         let index = 0

@@ -147,34 +147,32 @@ describe('provider tests', () => {
         expect(secondCount).to.equal(1)
       })
 
-      // for (const { will, input, agg, model, assert } of tests) {
-      //   it(`${prv.name}::${will}`, async () => {
-      //     if (!prv.cache) {
-      //       prv.cache = await prv.provider()
-      //       registerTestDomain(prv.name, prv.cache)
-      //     }
+      it('will start at end of stream when "tailStream" option is true', async () => {
+        let count = 0
+        const pop = domain.handler('start-tail', { tailStream: true })
+        pop.handle('one', async () => {
+          ++count
+        })
 
-      //     for (const func of input) {
-      //       await func(domain, provider, prv.name)
-      //     }
+        await pop.runOnce()
+        expect(count).to.equal(0)
+      })
 
-      //     if (agg) {
-      //       const actual = await domain.getAggregate(agg.id)
-      //       match(agg, actual.aggregate)
-      //     }
+      it('will always start at end of stream when "alwaysTailStream" is true', async () => {
+        let count = 0
+        const pop = domain.handler('start-tail', { alwaysTailStream: true })
+        pop.handle('one', async () => {
+          ++count
+        })
 
-      //     if (model) {
-      //       await domain.populator.runOnce()
-      //       const actual = domain.models.get(model.id)
-      //       expect(actual, 'read model exists').to.exist
-      //       match(model, actual)
-      //     }
+        await pop.runOnce()
+        expect(count).to.equal(0)
 
-      //     if (assert) {
-      //       await assert(domain, provider, prv.name)
-      //     }
-      //   })
-      // }
+        await domain.command.doOne('alwaysTailStream', { one: 1 })
+        pop.reset()
+        await pop.runOnce()
+        expect(count).to.equal(0)
+      })
     })
   }
 })

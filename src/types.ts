@@ -1,3 +1,8 @@
+export type HandlerHooks = {
+  preRun?: () => Promise<void>
+  postRun?: (events: number, handled: number) => Promise<void>
+}
+
 export type Event = { type: string }
 export type Command = { type: string }
 export type Aggregate = {}
@@ -69,6 +74,10 @@ export type Provider<Evt extends Event> = {
     aggregateId: string,
     fromPosition?: any
   ): Promise<Array<StoreEvent<Evt>>>
+  getLastEventFor(
+    stream: string | string[],
+    aggregateId?: string
+  ): Promise<StoreEvent<Evt> | undefined>
   append(
     stream: string,
     aggregateId: string,
@@ -101,8 +110,14 @@ export type CommandHandler<E extends Event, A extends Aggregate, C extends Comma
   [key in C['type']]: (cmd: OptCmd<C, key> & ID, agg: A & BaseAggregate) => Promise<E | E[] | void>
 }
 
+export type DomainHandlerOpts = {
+  hooks?: HandlerHooks
+  tailStream?: boolean
+  alwaysTailStream?: boolean
+}
+
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {
-  handler(bookmark: string): Handler<E>
+  handler(bookmark: string, options?: DomainHandlerOpts): Handler<E>
   command: CmdBody<C, A>
   getAggregate(
     id: string

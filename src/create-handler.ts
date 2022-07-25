@@ -1,5 +1,13 @@
-import { EventHandler, HandlerHooks } from './event-handler'
-import { EventMeta, HandlerBookmark, Provider, StreamsHandler, Event, HandlerBody } from './types'
+import { EventHandler } from './event-handler'
+import {
+  EventMeta,
+  HandlerBookmark,
+  Provider,
+  StreamsHandler,
+  Event,
+  HandlerBody,
+  HandlerHooks,
+} from './types'
 
 type Options<Body extends { [key: string]: Event }> = {
   bookmark: HandlerBookmark

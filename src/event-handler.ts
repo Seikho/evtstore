@@ -1,20 +1,30 @@
-import { Event, Provider, Ext, Handler, EventMeta, HandlerBookmark, HandlerBody } from './types'
+import {
+  Event,
+  Provider,
+  Ext,
+  Handler,
+  EventMeta,
+  HandlerBookmark,
+  HandlerBody,
+  HandlerHooks,
+} from './types'
 import { toMeta, MemoryBookmark } from './common'
-import { toArray } from '../provider/util'
+import { isPositionZero, toArray } from '../provider/util'
 
 const POLL = 1000
 const CRASH = 10000
-
-export type HandlerHooks = {
-  preRun?: () => Promise<void>
-  postRun?: (events: number, handled: number) => Promise<void>
-}
 
 type Options<E extends Event> = {
   stream: string | string[]
   bookmark: HandlerBookmark
   provider: Provider<E> | Promise<Provider<E>>
   hooks?: HandlerHooks
+
+  /** Start handling events from the end of the stream */
+  tailStream?: boolean
+
+  /** Every time the handler starts, always start from the end of the stream */
+  alwaysTailStream?: boolean
 }
 
 export class EventHandler<E extends Event> implements Handler<E> {
@@ -24,6 +34,8 @@ export class EventHandler<E extends Event> implements Handler<E> {
   private provider: Provider<E> = null as any
   private position: any
   private running = false
+  private tailStream = false
+  private alwaysTailStream = false
   private __handlers: {
     [eventType: string]: (id: string, ev: E, meta: EventMeta) => Promise<any>
   } = {}
@@ -35,6 +47,8 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.hooks = opts.hooks || {}
     this.provider = opts.provider as any
     this.name = typeof opts.bookmark === 'string' ? opts.bookmark : opts.bookmark.name
+    this.tailStream = opts.tailStream ?? false
+    this.alwaysTailStream = opts.alwaysTailStream ?? false
 
     if (this.streams.length === 0) {
       throw new Error('Cannot create event handler subscribed to no streams')
@@ -116,17 +130,37 @@ export class EventHandler<E extends Event> implements Handler<E> {
   getPosition = async () => {
     if (this.bookmark === MemoryBookmark) {
       if (this.position) return this.position
+
+      if (this.alwaysTailStream) {
+        const event = await this.provider.getLastEventFor(this.streams)
+        this.position = event?.position || 0
+        return event
+      }
+
       const notExistantBookmark = new Date().toISOString()
       const position = await this.provider.getPosition(notExistantBookmark)
       this.position = position
       return position
     }
 
-    if (typeof this.bookmark === 'string') {
-      return this.provider.getPosition(this.bookmark as string)
+    if (this.alwaysTailStream) {
+      const event = await this.provider.getLastEventFor(this.streams)
+      if (event) return event.position
     }
 
-    return this.bookmark.getPosition()
+    const bm =
+      typeof this.bookmark === 'string'
+        ? await this.provider.getPosition(this.bookmark as string)
+        : await this.bookmark.getPosition()
+
+    // If this is a new handler without a position, we may need to start from the end of the stream(s) history
+    if (this.tailStream && isPositionZero(bm)) {
+      const event = await this.provider.getLastEventFor(this.streams)
+      return event?.position || bm
+    }
+
+    // Otherwise return the start of the beginning of the stream(s) history
+    return bm
   }
 
   setPosition = async () => {
