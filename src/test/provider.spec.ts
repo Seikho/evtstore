@@ -173,6 +173,21 @@ describe('provider tests', () => {
         await pop.runOnce()
         expect(count).to.equal(0)
       })
+
+      it('will handle an event when appended after starting alwaysTailStream handler', async () => {
+        let count = 0
+        const pop = domain.handler('start-tail', { alwaysTailStream: true })
+        pop.handle('one', async () => {
+          ++count
+        })
+
+        await pop.runOnce()
+        expect(count).to.equal(0)
+
+        await domain.command.doOne('alwaysTailStream', { one: 1 })
+        await pop.runOnce()
+        expect(count).to.equal(1)
+      })
     })
   }
 })
