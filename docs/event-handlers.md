@@ -29,8 +29,25 @@ Once the `EventHandler` has been started, the **Event Handler Loop** will:
 Note that the `Stream` type is inferred from the `Aggregate` stream names when `createDomain` is called.
 
 ```ts
-function createHandler(bookmark: string, streams: Stream[]): EventHandler
+function createHandler(bookmark: string, streams: Stream[], options?: HandlerOptions): EventHandler
 ```
+
+### HandlerOptions
+
+```ts
+type HandlerOptions = {
+  tailStream?: boolean
+  alwaysTailStream?: boolean
+}
+```
+
+#### tailStream
+
+When the event handler is started for the first time, the handler will begin at the end of the stream(s) history
+
+#### alwaysTailStream
+
+Every time the event handler is started, the handler will begin at the end of the stream(s) history
 
 ## EventHandler
 

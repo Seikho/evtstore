@@ -14,6 +14,8 @@ type Options<Body extends { [key: string]: Event }> = {
   streams: Array<keyof Body>
   provider: Provider<Event> | Promise<Provider<Event>>
   hooks?: HandlerHooks
+  alwaysTailStream?: boolean
+  tailStream?: boolean
 }
 
 export function createHandler<Body extends { [key: string]: Event }>(options: Options<Body>) {
@@ -22,6 +24,8 @@ export function createHandler<Body extends { [key: string]: Event }>(options: Op
     provider: options.provider,
     stream: options.streams as string[],
     hooks: options.hooks,
+    alwaysTailStream: options.alwaysTailStream,
+    tailStream: options.tailStream,
   })
 
   type CB = (id: string, event: Event, meta: EventMeta) => any
