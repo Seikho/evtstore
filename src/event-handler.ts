@@ -7,6 +7,7 @@ import {
   HandlerBookmark,
   HandlerBody,
   HandlerHooks,
+  DomainHandlerOpts,
 } from './types'
 import { toMeta, MemoryBookmark } from './common'
 import { isPositionZero, toArray } from '../provider/util'
@@ -19,13 +20,7 @@ type Options<E extends Event> = {
   bookmark: HandlerBookmark
   provider: Provider<E> | Promise<Provider<E>>
   hooks?: HandlerHooks
-
-  /** Start handling events from the end of the stream */
-  tailStream?: boolean
-
-  /** Every time the handler starts, always start from the end of the stream */
-  alwaysTailStream?: boolean
-}
+} & DomainHandlerOpts
 
 export class EventHandler<E extends Event> implements Handler<E> {
   name: string
@@ -36,6 +31,8 @@ export class EventHandler<E extends Event> implements Handler<E> {
   private running = false
   private tailStream = false
   private alwaysTailStream = false
+  private continueOnError = false
+
   private __handlers: {
     [eventType: string]: (id: string, ev: E, meta: EventMeta) => Promise<any>
   } = {}
@@ -49,6 +46,7 @@ export class EventHandler<E extends Event> implements Handler<E> {
     this.name = typeof opts.bookmark === 'string' ? opts.bookmark : opts.bookmark.name
     this.tailStream = opts.tailStream ?? false
     this.alwaysTailStream = opts.alwaysTailStream ?? false
+    this.continueOnError = opts.continueOnError ?? false
 
     if (this.streams.length === 0) {
       throw new Error('Cannot create event handler subscribed to no streams')
@@ -103,6 +101,13 @@ export class EventHandler<E extends Event> implements Handler<E> {
 
     const onError = (ex: any) => {
       ex.event = events[eventsHandled]
+
+      if (this.continueOnError) {
+        const bookmarkName = typeof this.bookmark === 'string' ? this.bookmark : this.bookmark.name
+        this.provider.onError(ex, this.streams.join(', '), bookmarkName, ex.event)
+        return
+      }
+
       throw ex
     }
 

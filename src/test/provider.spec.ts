@@ -188,6 +188,50 @@ describe('provider tests', () => {
         await pop.runOnce()
         expect(count).to.equal(1)
       })
+
+      it('will continue processing events when "continueOnError" is set', async () => {
+        let count = 0
+        const name = 'thrower'
+        const pop = domain.handler(name, { continueOnError: true, tailStream: true })
+
+        pop.handle('one', async () => {
+          ++count
+        })
+
+        pop.handle('throw', async () => {
+          throw new Error('Fail')
+        })
+
+        await pop.runOnce()
+        expect(count).to.eq(0)
+
+        await domain.command.doThrow(name, {})
+        await domain.command.doOne(name, { one: 1 })
+        await pop.runOnce()
+        expect(count).to.equal(1)
+      })
+
+      it('will not continue processing events when "continueOnError" is not set', async () => {
+        let count = 0
+        const name = 'non-thrower'
+        const pop = domain.handler(name, { continueOnError: false, tailStream: true })
+
+        pop.handle('one', async () => {
+          ++count
+        })
+
+        pop.handle('throw', async () => {
+          throw new Error('Fail')
+        })
+
+        await pop.runOnce()
+        expect(count).to.eq(0)
+
+        await domain.command.doThrow(name, {})
+        await domain.command.doOne(name, { one: 1 })
+        await pop.runOnce().catch(() => {})
+        expect(count).to.equal(0)
+      })
     })
   }
 })

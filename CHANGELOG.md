@@ -1,5 +1,10 @@
 # Changelog
 
+## 11.7.0
+
+- Add `continueOnError` to Event Handler options
+  - Do not stop processing events if an event handler throws. The error will be passed to `Provider.onError` and the event handler will move on to the next event(s)
+
 ## 11.6.1
 
 - Added changelog :)

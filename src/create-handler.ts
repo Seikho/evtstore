@@ -6,17 +6,14 @@ import {
   StreamsHandler,
   Event,
   HandlerBody,
-  HandlerHooks,
+  DomainHandlerOpts,
 } from './types'
 
 type Options<Body extends { [key: string]: Event }> = {
   bookmark: HandlerBookmark
   streams: Array<keyof Body>
   provider: Provider<Event> | Promise<Provider<Event>>
-  hooks?: HandlerHooks
-  alwaysTailStream?: boolean
-  tailStream?: boolean
-}
+} & DomainHandlerOpts
 
 export function createHandler<Body extends { [key: string]: Event }>(options: Options<Body>) {
   const handler = new EventHandler({
@@ -26,6 +23,7 @@ export function createHandler<Body extends { [key: string]: Event }>(options: Op
     hooks: options.hooks,
     alwaysTailStream: options.alwaysTailStream,
     tailStream: options.tailStream,
+    continueOnError: options.continueOnError,
   })
 
   type CB = (id: string, event: Event, meta: EventMeta) => any

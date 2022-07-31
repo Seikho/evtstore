@@ -112,8 +112,14 @@ export type CommandHandler<E extends Event, A extends Aggregate, C extends Comma
 
 export type DomainHandlerOpts = {
   hooks?: HandlerHooks
+  /** Start handling events from the end of the stream */
   tailStream?: boolean
+
+  /** Every time the handler starts, always start from the end of the stream */
   alwaysTailStream?: boolean
+
+  /** When a handler throws, continue processing events */
+  continueOnError?: boolean
 }
 
 export type Domain<E extends Event, A extends Aggregate, C extends Command> = {

@@ -36,10 +36,16 @@ function createHandler(bookmark: string, streams: Stream[], options?: HandlerOpt
 
 ```ts
 type HandlerOptions = {
-  tailStream?: boolean
-  alwaysTailStream?: boolean
+  tailStream?: boolean // Defaults to false
+  alwaysTailStream?: boolean // Defaults to false
+  continueOnError?: boolean // Defaults to false
 }
 ```
+
+#### continueOnError
+
+When an event handler function throws, the event handler will invoke the `Provider.onError` function then continue processing events.  
+By default event handlers will stop processing events until the handler no longer throws.
 
 #### tailStream
 

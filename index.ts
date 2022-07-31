@@ -1,7 +1,9 @@
-export { createDomainV1, HandlerOptsV1 } from './src/domain'
+import { DomainHandlerOpts } from './src/types'
+
+export { createDomainV1 } from './src/domain'
 export { createHandler } from './src/create-handler'
 export { createBookmark } from './src/create-bookmark'
-export { createDomainV2, createDomain, HandlerOptions } from './src/domain-v2'
+export { createDomainV2, createDomain } from './src/domain-v2'
 export { createAggregate, createProvidedAggregate } from './src/create-aggregate'
 export { createCommands } from './src/create-command'
 export {
@@ -33,3 +35,5 @@ export {
 } from './src/types'
 export { VersionError, CommandError } from './provider/error'
 export { MemoryBookmark } from './src/common'
+
+export { DomainHandlerOpts as HandlerOptsV1, DomainHandlerOpts as HandlerOptions }

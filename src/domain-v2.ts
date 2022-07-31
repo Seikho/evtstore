@@ -8,7 +8,7 @@ import {
   Event,
   HandlerBookmark,
   EventMeta,
-  HandlerHooks,
+  DomainHandlerOpts,
 } from './types'
 
 type StoreOpts = {
@@ -37,16 +37,6 @@ type ExtStoreAggEvent<T> = T extends StorableAggregate<infer E, any, any> ? E : 
 
 type ExtStreams<T extends AggregateStore> = T[keyof T]['stream']
 
-export type HandlerOptions = {
-  hooks?: HandlerHooks
-
-  /** Start handling events from the end of the stream */
-  tailStream?: boolean
-
-  /** Every time the handler starts, always start from the end of the stream */
-  alwaysTailStream?: boolean
-}
-
 export function createDomain<Tree extends AggregateStore>(opts: StoreOpts, aggregates: Tree) {
   return createDomainV2(opts, aggregates)
 }
@@ -68,7 +58,7 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
   const createHandler = <S extends ExtStreams<Tree>[]>(
     bookmark: HandlerBookmark,
     streams: S,
-    options: HandlerOptions = {}
+    options: DomainHandlerOpts = {}
   ) => {
     type Evt = EventTree[S[number]]
     type CB = (id: string, event: Event, meta: EventMeta) => any
@@ -78,9 +68,7 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
       bookmark,
       provider: opts.provider,
       stream: streams,
-      hooks: options.hooks,
-      tailStream: options.tailStream,
-      alwaysTailStream: options.alwaysTailStream,
+      ...options,
     })
 
     const handlerCallback = (id: string, event: Event, meta: EventMeta) => {
