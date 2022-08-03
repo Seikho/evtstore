@@ -2,6 +2,7 @@
 
 ### Databases
 
+- Postgres using [Postgres.js](https://www.npmjs.com/package/postgres)
 - Postgres using [node-postgres](https://node-postgres.com)
 - SQLite, MySQL, Postgres using [Knex](https://knexjs.org)
 - In-memory
@@ -13,6 +14,27 @@
 
 You can create your own providers. See the [existing providers](https://github.com/Seikho/evtstore/tree/master/provider) for examples.
 
+### Postgres with Postgres.js
+
+```ts
+import { createProvider, migrate } from 'evtstore/provider/postgres'
+import postgres from 'postgres'
+
+const sql = postgres({ ... })
+
+export const provider = createProvider({
+  sql,
+  limit: 1000, // The maximum number of events that can be returned at a time
+  events: 'events',
+  bookmarks: 'bookmarks'
+})
+
+export async function setupEventStore() {
+  await migrate({ client, events: 'events', bookmarks: 'bookmarks' })
+}
+
+```
+
 ### Postgres with node-postgres
 
 ```ts
@@ -22,6 +44,7 @@ import { Pool } from 'pg'
 const client = new Pool({ ... })
 
 export const provider = createProvider({
+  client,
   limit: 1000, // The maximum number of events that can be returned at a time
   events: 'events',
   bookmarks: 'bookmarks'

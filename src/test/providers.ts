@@ -6,6 +6,7 @@ import * as neo from '../../provider/neo4j'
 import * as neov3 from '../../provider/neo4j-v3'
 import * as pg from '../../provider/pg'
 import * as fs from 'fs'
+import * as postgres from '../../provider/postgres'
 import { StoreEvent, Provider } from '../types'
 import { Bookmark, migrate, createProvider } from '../../provider/mongo'
 import { ExampleEv } from './example'
@@ -34,12 +35,20 @@ export const providers: ProviderTest[] = [
     provider: createKnex,
   },
   {
+    name: 'postgres',
+    provider: () => createPostgres('postgres_async'),
+  },
+  {
+    name: 'postgres-limit',
+    provider: () => createPostgres('postgres_limit_async'),
+  },
+  {
     name: 'pg',
-    provider: () => createPostgres('pg_async'),
+    provider: () => createPG('pg_async'),
   },
   {
     name: 'pg-limit',
-    provider: () => createPostgres('pg_limit_async', 1),
+    provider: () => createPG('pg_limit_async', 1),
   },
   {
     name: 'knex-postgres-limit',
@@ -60,7 +69,7 @@ export const providers: ProviderTest[] = [
   {
     name: 'neo4jLimit.v3',
     provider: createNeoV3Limit,
-  },
+  // },
 ]
 
 async function createMongo() {
@@ -126,7 +135,19 @@ async function createSqliteFile() {
 }
 
 async function createPostgres(name: string, limit?: number) {
-  const client = await util.getTestPostgresDb(name)
+  const sql = await util.getTestPostgresDb(name)
+  const provider = postgres.createProvider<ExampleEv>({
+    sql,
+    events: 'events',
+    bookmarks: 'bookmarks',
+    limit,
+  })
+
+  return provider
+}
+
+async function createPG(name: string, limit?: number) {
+  const client = await util.getTestPgDb(name)
   const provider = pg.createProvider<ExampleEv>({
     client,
     events: 'events',

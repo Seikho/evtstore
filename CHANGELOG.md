@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.8.0
+
+Add support for postgres.js library
+
+- `import { migrate, createProvider } from 'evtstore/providers/postgres`
+
 ## 11.7.0
 
 - Add `continueOnError` to Event Handler options
