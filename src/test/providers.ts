@@ -69,7 +69,7 @@ export const providers: ProviderTest[] = [
   {
     name: 'neo4jLimit.v3',
     provider: createNeoV3Limit,
-  // },
+  },
 ]
 
 async function createMongo() {
