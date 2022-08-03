@@ -28,6 +28,7 @@ To obtain these goals the design is highly opinionated, but still flexible.
 
 See [Providers](https://seikho.github.io/evtstore/#/docs/providers) for more details and examples
 
+- Postgres using [Postgres.js](https://www.npmjs.com/package/postgres)
 - Postgres using [node-postgres](https://node-postgres.com)
 - SQLite, MySQL, Postgres using [Knex](https://knexjs.org)
 - In-memory
