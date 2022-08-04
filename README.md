@@ -60,7 +60,8 @@ type PostCmd =
   | { type: 'createPost', userId: string, content: string }
   | { type: 'archivedPost', userId: string }
 
-const user = createAggregate<UserEvt, UserAgg, 'users'>({ stream: 'users' }, {
+const user = createAggregate<UserEvt, UserAgg, 'users'>({
+  stream: 'users',
   create: () => ({ name: '', enabled: false }),
   fold: (evt) => {
     switch (evt.type) {
