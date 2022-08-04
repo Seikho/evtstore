@@ -1,12 +1,12 @@
 import { createAggregate } from '../../src/create-aggregate'
 import { UserAgg, UserEvt } from '../types/user'
 /**
- * 'user-events'  is the Event Stream within the event log
+ * 'user-events' is the "event stream" within the event log
  */
-export const user = createAggregate<UserEvt, UserAgg, 'user-events'>(
-  'user-events',
-  () => ({ enabled: false, name: '' }),
-  (evt) => {
+export const user = createAggregate<UserEvt, UserAgg, 'user-events'>({
+  stream: 'user-events',
+  create: () => ({ enabled: false, name: '' }),
+  fold: (evt) => {
     switch (evt.type) {
       case 'created':
         return { name: evt.name, enabled: true }
@@ -17,5 +17,5 @@ export const user = createAggregate<UserEvt, UserAgg, 'user-events'>(
       case 'nameChanged':
         return { name: evt.name }
     }
-  }
-)
+  },
+})

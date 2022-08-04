@@ -74,7 +74,8 @@ const user = createAggregate<UserEvt, UserAgg, 'users'>({ stream: 'users' }, {
   }
 })
 
-const post = createAggregate<PostEvt, PostAgg, 'posts'>({ stream: 'posts' }, {
+const post = createAggregate<PostEvt, PostAgg, 'posts'>({
+  stream: 'posts',
   create: () => ({ content: '', userId: '', archived: false }),
   fold: (evt) => {
     switch (evt.type) {
@@ -82,7 +83,7 @@ const post = createAggregate<PostEvt, PostAgg, 'posts'>({ stream: 'posts' }, {
         return { userId: evt.userId, content: evt.content }
       case 'postArchived':
         return { archived: true }
-    }
+    },
   }
 })
 
@@ -92,7 +93,7 @@ export const { domain, createHandler } = createDomain({ provider }, { user, post
 
 export const userCmd = createCommands<UserEvt, UserEvt, UserCmd>(domain.user, {
   async create(cmd, agg) { ... },
-  async disabl(cmd, agg) { ... },
+  async disable(cmd, agg) { ... },
   async enable(cmd, agg) { ... },
 })
 
@@ -112,7 +113,17 @@ export const postCmd = createCommands<PostEvt, PostAgg, PostCmd>(domain.post, {
   }
 })
 
-const postModel = createHandler('posts-model', ['posts'])
+const postModel = createHandler('posts-model', ['posts'], {
+  // When the event handler is started for the first time, the handler will begin at the end of the stream(s) history
+  tailStream: false,
+
+  // Every time the event handler is started, the handler will begin at the end of the stream(s) history
+  alwaysTailStream: false,
+
+  // Skip events that throw an error when being handled
+  continueOnError: false,
+})
+
 postModel.handle('posts', 'postCreated', async (id, event, meta) => {
   // Insert into database
 })
