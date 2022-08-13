@@ -136,4 +136,4 @@ See [the example folder](https://github.com/Seikho/evtstore/tree/master/example)
 
 ## API
 
-See [API](https://seikho.github.com/evtstore/#/docs/api)
+See [API](https://seikho.github.io/evtstore/#/docs/api)
