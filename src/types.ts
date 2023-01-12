@@ -110,6 +110,8 @@ export type CommandHandler<E extends Event, A extends Aggregate, C extends Comma
   [key in C['type']]: (cmd: OptCmd<C, key> & ID, agg: A & BaseAggregate) => Promise<E | E[] | void>
 }
 
+type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & { type: T }
+
 export type DomainHandlerOpts = {
   hooks?: HandlerHooks
   /** Start handling events from the end of the stream */
@@ -142,8 +144,6 @@ export type ExecutableAggregate<C extends Command, A extends Aggregate> = {
 }
 
 type ExtCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'>
-
-type OptCmd<C extends Command, T extends C['type']> = Omit<Ext<C, T>, 'type'> & { type: T }
 
 export type HandlerBody<E extends Event> = {
   [evt in E['type']]?: (id: string, evt: Ext<E, evt>, meta: EventMeta) => Promise<any>
