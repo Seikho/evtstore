@@ -9,11 +9,40 @@ type AggregateOptions = {
   stream: string
   create: () => Aggreate
   fold: (event: Event, previous: Aggregate) => Partial<Aggregate>
+
+  /**
+   * Used by the aggregate persistence logic - This is to determine whether hydration is okay or not
+   * This must be provided to enable aggregate persistence
+   */
+  version?: string
+
+  /**
+   * Whether or not to persist the aggregate when appending events.
+   * `version` must be provided as well
+   */
+  persistAggregate?: boolean
 }
 function createAggreate<Event, Aggregate, Stream extends string>(
   options: AggregateOptions
 ): StorableAggregate<Event, Aggregate, Stream>
 ```
+
+### Aggregate Persistence
+
+⚠️⚠️⚠️ **WARNING: FOOTGUN AHEAD** ⚠️⚠️⚠️  
+Using this feature can lead to bugs when not this feature is not used as intended.  
+It is incredibly important to update the `version` property passed to `createAggregate` when modifying the `fold` function.  
+If you modify the `fold` function, but forget to modify the `version`, this framework will use the persisted aggregate instead of _re-folding_ the aggregate.
+
+For large domains or where performance _really_ matters, the aggregate can be persisted within events to faster aggregate hydration.  
+Enable this feature when calling `createAggregate(...)` by passing `.version` and `.persistAggregate: true`.  
+The `.version` value is recorded in the persisted copy of the aggregate and later used to determine if you have updated your version.
+
+**IMPORTANT**: When making (breaking) changes to the `fold` function, it is important to increase the `.version` value:
+
+- Doing so will force the aggregate to be re-calculate
+- The re-calculation occurs because of a mismatch between the `.version` and the version on the persisted copy of the aggregate
+- **Unexpected behaviour can occur if the `fold` function is modified, but the `createAggregate({ version })` is not**
 
 ### createDomain
 

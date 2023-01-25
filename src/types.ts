@@ -7,9 +7,7 @@ export type Event = { type: string }
 export type Command = { type: string }
 export type Aggregate = {}
 
-export type PersistedAggregate<A> = { version: string; aggregate: A & BaseAggregate }
-
-export type StoreEvent<T = unknown> = EventMeta & { event: T }
+export type StoreEvent<E = unknown, A = unknown> = EventMeta & { event: E & { __persisted?: A } }
 
 export type ProviderBookmark = {
   readonly name: string
@@ -57,7 +55,7 @@ export type ErrorCallback = (
 
 type ID = { aggregateId: string }
 
-export type BaseAggregate = { version: number; aggregateId: string }
+export type BaseAggregate = { version: number; aggregateId: string; __pv?: string }
 
 export type Fold<E extends Event, A extends Aggregate> = (
   ev: E,
@@ -169,6 +167,8 @@ export type StorableAggregate<
   stream: S
   fold: Fold<E, A>
   aggregate: () => A
+  version?: string
+  persistAggregate?: boolean
 }
 
 export type AggregateStore = { [key: string]: StorableAggregate }
@@ -180,4 +180,5 @@ export type ProvidedAggregate<E extends Event, A extends Aggregate, S extends st
   toNextAggregate: (prev: A & BaseAggregate, event: StoreEvent<E>) => A & BaseAggregate
 
   version?: string
+  persistAggregate?: boolean
 }

@@ -1,4 +1,4 @@
-import { createProvidedAggregate } from './create-aggregate'
+import { createPersistedAggregate, createProvidedAggregate } from './create-aggregate'
 import { EventHandler } from './event-handler'
 import {
   AggregateStore,
@@ -45,14 +45,17 @@ export function createDomainV2<Tree extends AggregateStore>(opts: StoreOpts, agg
   type EventTree = StreamEvents<Tree>
   const _store: any = {}
 
-  for (const [key, { stream, aggregate, fold }] of Object.entries(aggregates)) {
-    _store[key] = createProvidedAggregate({
+  for (const [key, storableAgg] of Object.entries(aggregates)) {
+    const aggOpts = {
+      ...storableAgg,
       provider: opts.provider,
-      aggregate,
-      fold,
-      stream,
       useCache: opts.useCache,
-    })
+    }
+
+    _store[key] =
+      aggOpts.persistAggregate && aggOpts.version
+        ? createPersistedAggregate(aggOpts)
+        : createProvidedAggregate(aggOpts)
   }
 
   const createHandler = <S extends ExtStreams<Tree>[]>(

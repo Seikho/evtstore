@@ -8,19 +8,26 @@ import {
   Fold,
   ProvidedAggregate,
   Provider,
-  PersistedAggregate,
 } from './types'
 
 type AggOpts<E extends Event, A extends Aggregate, S extends string> = {
   stream: S
   create: () => A
   fold: Fold<E, A>
+  version?: string
+  persistAggregate?: boolean
 }
 
 export function createAggregate<E extends Event, A extends Aggregate, S extends string>(
   opts: AggOpts<E, A, S>
 ): StorableAggregate<E, A, S> {
-  return { stream: opts.stream, aggregate: opts.create, fold: opts.fold }
+  return {
+    stream: opts.stream,
+    aggregate: opts.create,
+    fold: opts.fold,
+    version: opts.version,
+    persistAggregate: !!opts.persistAggregate,
+  }
 }
 
 export function createProvidedAggregate<E extends Event, A extends Aggregate>(
@@ -71,7 +78,6 @@ export function createProvidedAggregate<E extends Event, A extends Aggregate>(
 }
 
 export function createPersistedAggregate<E extends Event, A extends Aggregate>(
-  version: string,
   opts: StorableAggregate<E, A> & {
     provider: Provider<E> | Promise<Provider<E>>
     useCache?: boolean
@@ -92,12 +98,17 @@ export function createPersistedAggregate<E extends Event, A extends Aggregate>(
       return { ...opts.aggregate(), aggregateId: id, version: 0 }
     }
 
-    if (!lastEvent.event.__persisted) return getAggregate(id)
+    if (!lastEvent.event.__persisted) {
+      return getAggregate(id)
+    }
 
-    const lastAgg: PersistedAggregate<A> = lastEvent.event.__persisted
+    const lastAgg: A & BaseAggregate = lastEvent.event.__persisted
 
-    if (lastAgg.version !== version) return getAggregate(id)
-    return lastAgg.aggregate
+    if (lastAgg.__pv !== opts.version) {
+      return getAggregate(id)
+    }
+
+    return lastAgg
   }
 
   async function getAggregate(id: string): Promise<A & BaseAggregate> {
@@ -141,5 +152,7 @@ export function createPersistedAggregate<E extends Event, A extends Aggregate>(
     getAggregate: getPersistedAggregate,
     toNextAggregate,
     provider: opts.provider,
+    version: opts.version,
+    persistAggregate: !!opts.persistAggregate,
   }
 }

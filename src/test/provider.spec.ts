@@ -1,4 +1,10 @@
-import { registerTestDomain, getDomain, TestDomain } from './tests'
+import {
+  registerTestDomain,
+  getDomain,
+  TestDomain,
+  createTestDomainV2,
+  TestDomainV2,
+} from './tests'
 import { expect } from 'chai'
 import { providers } from './providers'
 import { Provider } from '../types'
@@ -12,12 +18,14 @@ describe('provider tests', () => {
   for (const { provider, name } of providers) {
     let prv: Provider<ExampleEv>
     let domain: TestDomain
+    let domainv2: TestDomainV2
 
     describe(`::${name}`, function (this: any) {
       this.timeout(10000)
 
       it(`will append an event`, async () => {
         prv = await provider()
+        domainv2 = createTestDomainV2(name, prv, 'v1')
         registerTestDomain(name, prv)
         domain = getDomain(name)!
         const actual = await domain.command.doOne('one', { one: 42 })
@@ -232,6 +240,48 @@ describe('provider tests', () => {
         await domain.command.doOne(name, { one: 1 })
         await pop.runOnce().catch(() => {})
         expect(count).to.equal(0)
+      })
+
+      it('will not contain a persisted aggregate when not configured', async () => {
+        const name = 'persist-test'
+        await domain.command.doOne(name, { one: 1 })
+        const lastEvent = await domainv2.provider.getLastEventFor('test-example', name)
+        expect(lastEvent!.event.__persisted).to.be.undefined
+      })
+
+      it('will persist the aggregate when configured', async () => {
+        const name = 'persisted'
+        await domainv2.cmd.doOne(name, { one: 2 })
+        const lastEvent = await domainv2.provider.getLastEventFor('test-example', name)
+        expect(lastEvent!.event.__persisted).to.exist
+      })
+
+      it('will hydrate the aggregate from the last event', async () => {
+        const agg = await domainv2.domain.example.getAggregate('persisted')
+        expect(agg.__pv).to.equal('v1')
+      })
+
+      it('will not hydrate the aggregate when a version mismatch occurs', async () => {
+        domainv2 = createTestDomainV2(name, prv, 'v2')
+        const agg = await domainv2.domain.example.getAggregate('persisted')
+        expect(agg.__pv).to.be.undefined
+      })
+
+      it('will persist aggregate with a new version', async () => {
+        const name = 'persisted'
+        await domainv2.cmd.doOne(name, { one: 2 })
+        const lastEvent = await domainv2.provider.getLastEventFor('test-example', name)
+        expect(lastEvent!.event.__persisted.__pv).to.equal('v2')
+      })
+
+      it('will hydrate the aggregate with the new version', async () => {
+        const agg = await domainv2.domain.example.getAggregate('persisted')
+        expect(agg.__pv).to.equal('v2')
+      })
+
+      it('will not hydrate the aggregate when a version mismatch occurs', async () => {
+        const agg = await domainv2.providedAgg('v3').getAggregate('persisted')
+        expect(agg.__pv).to.be.undefined
       })
     })
   }
