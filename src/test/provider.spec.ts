@@ -251,7 +251,7 @@ describe('provider tests', () => {
 
       it('will persist the aggregate when configured', async () => {
         const name = 'persisted'
-        await domainv2.cmd.doOne(name, { one: 2 })
+        await domainv2.cmd.doMulti(name, { multi: 2 })
         const lastEvent = await domainv2.provider.getLastEventFor('test-example', name)
         expect(lastEvent!.event.__persisted).to.exist
       })
@@ -259,6 +259,7 @@ describe('provider tests', () => {
       it('will hydrate the aggregate from the last event', async () => {
         const agg = await domainv2.domain.example.getAggregate('persisted')
         expect(agg.__pv).to.equal('v1')
+        expect(agg.multi).to.equal(4)
       })
 
       it('will not hydrate the aggregate when a version mismatch occurs', async () => {
@@ -269,7 +270,7 @@ describe('provider tests', () => {
 
       it('will persist aggregate with a new version', async () => {
         const name = 'persisted'
-        await domainv2.cmd.doOne(name, { one: 2 })
+        await domainv2.cmd.doMulti(name, { multi: 4 })
         const lastEvent = await domainv2.provider.getLastEventFor('test-example', name)
         expect(lastEvent!.event.__persisted.__pv).to.equal('v2')
       })
@@ -277,6 +278,7 @@ describe('provider tests', () => {
       it('will hydrate the aggregate with the new version', async () => {
         const agg = await domainv2.domain.example.getAggregate('persisted')
         expect(agg.__pv).to.equal('v2')
+        expect(agg.multi).to.equal(12)
       })
 
       it('will not hydrate the aggregate when a version mismatch occurs', async () => {
