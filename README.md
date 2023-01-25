@@ -39,6 +39,10 @@ See [Providers](https://seikho.github.io/evtstore/#/docs/providers) for more det
 - Neo4j v3.5
 - Neo4j v4
 
+## Aggregate Persistence
+
+See [the documentation](https://seikho.github.io/evtstore/#/docs/api?id=aggregate-persistence) regarding information about aggregate persistence. This refers to persisting a copy of the aggregate on events for performant retrieval.
+
 ## Examples
 
 EvtStore is type-driven to take advantage of type safety and auto completion. We front-load the creation of our `Event`, `Aggregate`, and `Command` types to avoid having to repeatedly import and pass them as generic argument. EvtStore makes use for TypeScript's [mapped types and conditional types](https://www.typescriptlang.org/docs/handbook/2/mapped-types.html) to achieve this.
