@@ -8,6 +8,7 @@ import {
   Fold,
   ProvidedAggregate,
   Provider,
+  PersistedAggregate,
 } from './types'
 
 type AggOpts<E extends Event, A extends Aggregate, S extends string> = {
@@ -57,6 +58,75 @@ export function createProvidedAggregate<E extends Event, A extends Aggregate>(
     return aggregate
   }
 
+  function toNextAggregate(prev: A & BaseAggregate, ev: StoreEvent<E>): A & BaseAggregate {
+    return {
+      ...prev,
+      ...opts.fold(ev.event, prev, toMeta(ev)),
+      version: ev.version,
+      aggregateId: ev.aggregateId,
+    }
+  }
+
+  return { stream: opts.stream, getAggregate, toNextAggregate, provider: opts.provider }
+}
+
+export function createPersistedAggregate<E extends Event, A extends Aggregate>(
+  version: string,
+  opts: StorableAggregate<E, A> & {
+    provider: Provider<E> | Promise<Provider<E>>
+    useCache?: boolean
+  }
+): ProvidedAggregate<E, A> {
+  const aggregateCache = new Map<string, { aggregate: A & BaseAggregate; position: any }>()
+
+  /**
+   * We will attempt to retrieve the persisted version of the aggregate from the last event
+   * The persisted aggregate is only valid if:
+   * 1. The version passed to createPersistedAggregate function matches the version on the persisted version
+   * 2.
+   */
+  async function getPersistedAggregate(id: string): Promise<A & BaseAggregate> {
+    const provider = await opts.provider
+    const lastEvent = await provider.getLastEventFor(opts.stream, id)
+    if (!lastEvent) {
+      return { ...opts.aggregate(), aggregateId: id, version: 0 }
+    }
+
+    if (!lastEvent.event.__persisted) return getAggregate(id)
+
+    const lastAgg: PersistedAggregate<A> = lastEvent.event.__persisted
+
+    if (lastAgg.version !== version) return getAggregate(id)
+    return lastAgg.aggregate
+  }
+
+  async function getAggregate(id: string): Promise<A & BaseAggregate> {
+    const provider = await opts.provider
+
+    const cached = opts.useCache && aggregateCache.get(id)
+    if (cached) {
+      const events = await getAllEventsFor<E>(provider, opts.stream, id, cached.position)
+      if (!events.length) {
+        return cached.aggregate
+      }
+
+      const lastEvent = events.slice(-1)[0]
+      const aggregate = events.reduce(toNextAggregate, cached.aggregate)
+      aggregateCache.set(id, { aggregate, position: lastEvent.position })
+      return aggregate
+    }
+
+    const events = await getAllEventsFor<E>(provider, opts.stream, id)
+
+    const next = { ...opts.aggregate(), aggregateId: id, version: 0 }
+    const aggregate = events.reduce(toNextAggregate, next)
+    if (events.length > 0) {
+      const lastEvent = events.slice(-1)[0]
+      aggregateCache.set(id, { aggregate, position: lastEvent.position })
+    }
+    return aggregate
+  }
+
   function toNextAggregate(next: A & BaseAggregate, ev: StoreEvent<E>): A & BaseAggregate {
     return {
       ...next,
@@ -66,5 +136,10 @@ export function createProvidedAggregate<E extends Event, A extends Aggregate>(
     }
   }
 
-  return { stream: opts.stream, getAggregate, toNextAggregate, provider: opts.provider }
+  return {
+    stream: opts.stream,
+    getAggregate: getPersistedAggregate,
+    toNextAggregate,
+    provider: opts.provider,
+  }
 }

@@ -54,8 +54,9 @@ describe('provider tests', () => {
       })
 
       it('will throw on version conflict', async () => {
+        const storeEvents = prv.createEvents('test-example', 'one', 1, [{ one: 1, type: 'one' }])
         const threw = await prv
-          .append('test-example', 'one', 1, [{ one: 1, type: 'one' }])
+          .append('test-example', 'one', 1, storeEvents)
           .then(() => false)
           .catch((err) => err)
         expect(threw instanceof VersionError).to.equal(true)

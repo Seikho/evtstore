@@ -1,6 +1,7 @@
 import { Sql } from 'postgres'
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
+import { createEventsMapper } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -76,26 +77,11 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return result.map(mapToEvent)
     },
-    append: async (stream, aggregateId, version, newEvents) => {
-      const timestamp = new Date(Date.now())
+    createEvents: createEventsMapper<E>(0),
+    append: async (_stream, _aggregateId, _version, newEvents) => {
       try {
         const result = await sql.begin(async (sql) => {
-          const storeEvents: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
-            stream,
-            event,
-            aggregateId,
-            version: version + i,
-            position: 0,
-            timestamp,
-          }))
-
-          const toInsert = toStorableEvents(
-            stream,
-            aggregateId,
-            version,
-            timestamp.toISOString(),
-            newEvents
-          )
+          const toInsert = toStorableEvents(newEvents)
 
           const result = await sql`insert into ${sql(evts)} ${sql(
             toInsert,
@@ -107,10 +93,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           )} returning position`
 
           for (let i = 0; i < result.length; i++) {
-            storeEvents[i].position = Number(result[i].position)
+            newEvents[i].position = Number(result[i].position)
           }
 
-          return storeEvents
+          return newEvents
         })
         return result
       } catch (ex: any) {
@@ -121,13 +107,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
   }
 }
 
-function toStorableEvents(
-  stream: string,
-  aggregate_id: string,
-  version: number,
-  timestamp: string,
-  events: any[]
-) {
+function toStorableEvents<E extends Event>(events: StoreEvent<E>[]) {
   const appendable: Array<{
     stream: string
     aggregate_id: string
@@ -137,11 +117,11 @@ function toStorableEvents(
   }> = []
   for (let i = 0; i < events.length; i++) {
     appendable.push({
-      stream,
-      aggregate_id,
-      version: version + i,
-      event: JSON.stringify(events[i]),
-      timestamp,
+      stream: events[i].stream,
+      aggregate_id: events[i].aggregateId,
+      version: events[i].version,
+      event: JSON.stringify(events[i].event),
+      timestamp: events[i].timestamp.toISOString(),
     })
   }
   return appendable

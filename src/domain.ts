@@ -85,7 +85,8 @@ function wrapCmd<E extends Event, A extends Aggregate, C extends Command>(
       const provider = await providerAsync
       let nextVersion = aggregate.version + 1
 
-      const storeEvents = await provider.append(opts.stream, id, nextVersion, events)
+      const newEvents = provider.createEvents(opts.stream, id, nextVersion, events)
+      const storeEvents = await provider.append(opts.stream, id, nextVersion, newEvents)
       const nextAggregate = storeEvents.reduce(toNextAggregate, aggregate)
       return nextAggregate
     }

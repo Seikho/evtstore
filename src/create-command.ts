@@ -6,11 +6,13 @@ import {
   CommandHandler,
   ProvidedAggregate,
   Event,
+  CommandOptions,
 } from './types'
 
 export function createCommands<E extends Event, A extends Aggregate, C extends Command>(
   provided: ProvidedAggregate<E, A>,
-  handler: CommandHandler<E, A, C>
+  handler: CommandHandler<E, A, C>,
+  opts?: CommandOptions
 ) {
   const commands = Object.keys(handler) as Array<C['type']>
   const wrapped: CmdBody<C, A & BaseAggregate> = {} as any
@@ -34,8 +36,20 @@ export function createCommands<E extends Event, A extends Aggregate, C extends C
       const provider = await provided.provider
       let nextVersion = aggregate.version + 1
 
-      const storeEvents = await provider.append(provided.stream, id, nextVersion, events)
-      const nextAggregate = storeEvents.reduce(provided.toNextAggregate, aggregate)
+      let newEvents = provider.createEvents(provided.stream, id, nextVersion, events)
+      const nextAggregate = newEvents.reduce(provided.toNextAggregate, aggregate)
+
+      if (opts?.persistAggregate && provided.version) {
+        newEvents = newEvents.map((ev) => ({
+          ...ev,
+          event: {
+            ...ev.event,
+            __persisted: { version: provided.version, aggregate: nextAggregate },
+          },
+        }))
+      }
+
+      await provider.append(provided.stream, id, nextVersion, newEvents)
       return nextAggregate
     }
 

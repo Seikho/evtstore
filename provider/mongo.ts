@@ -1,7 +1,7 @@
 import { Collection, Timestamp, MongoError, Filter } from 'mongodb'
 import { Event, StoreEvent, Provider, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
-import { toArray } from './util'
+import { createEventsMapper, toArray } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -24,6 +24,7 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
       /* NOOP */
     })
 
+  const createEvents = createEventsMapper<E>(new Timestamp({ t: 0, i: 0 }))
   return {
     limit: opts.limit,
     driver: 'mongo',
@@ -74,21 +75,13 @@ export function createProvider<E extends Event>(opts: Options<E>): Provider<E> {
 
         return query.toArray()
       }),
-    append: async (stream, aggregateId, version, newEvents) => {
-      const timestamp = new Date(Date.now())
 
+    createEvents,
+
+    append: async (_stream, _aggId, _version, newEvents) => {
       try {
-        const toStore: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
-          stream,
-          position: new Timestamp({ t: 0, i: 0 }),
-          version: version + i,
-          timestamp,
-          event,
-          aggregateId,
-        }))
-
-        await events.then((coll) => coll.insertMany(toStore))
-        return toStore
+        await events.then((coll) => coll.insertMany(newEvents))
+        return newEvents
       } catch (ex) {
         if (ex instanceof MongoError && ex.code === 11000) throw new VersionError()
         throw ex

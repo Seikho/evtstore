@@ -7,12 +7,18 @@ export type Event = { type: string }
 export type Command = { type: string }
 export type Aggregate = {}
 
+export type PersistedAggregate<A> = { version: string; aggregate: A & BaseAggregate }
+
 export type StoreEvent<T = unknown> = EventMeta & { event: T }
 
 export type ProviderBookmark = {
   readonly name: string
   getPosition(): Promise<any>
   setPosition(position: any): Promise<void>
+}
+
+export type CommandOptions = {
+  persistAggregate?: boolean
 }
 
 export type DomainOptions<E extends Event, A extends Aggregate> = {
@@ -77,12 +83,18 @@ export type Provider<Evt extends Event> = {
   getLastEventFor(
     stream: string | string[],
     aggregateId?: string
-  ): Promise<StoreEvent<Evt> | undefined>
-  append(
+  ): Promise<StoreEvent<Evt & { __persisted?: any }> | undefined>
+  createEvents(
     stream: string,
     aggregateId: string,
     version: number,
     event: Evt[]
+  ): Array<StoreEvent<Evt>>
+  append(
+    stream: string,
+    aggregateId: string,
+    version: number,
+    event: StoreEvent<Evt>[]
   ): Promise<Array<StoreEvent<Evt>>>
   limit?: number
 }
@@ -166,4 +178,6 @@ export type ProvidedAggregate<E extends Event, A extends Aggregate, S extends st
   provider: Provider<E> | Promise<Provider<E>>
   getAggregate: (id: string) => Promise<A & BaseAggregate>
   toNextAggregate: (prev: A & BaseAggregate, event: StoreEvent<E>) => A & BaseAggregate
+
+  version?: string
 }

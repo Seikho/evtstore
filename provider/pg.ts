@@ -1,6 +1,7 @@
 import { Pool, Client } from 'pg'
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
+import { createEventsMapper } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -100,20 +101,13 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       const result = await opts.client.query(q, values)
       return result.rows.map(mapToEvent)
     },
-    append: async (stream, aggregateId, version, newEvents) => {
+    createEvents: createEventsMapper<E>(0),
+    append: async (_stream, _aggregateId, _version, newEvents) => {
       const trx = await opts.client.connect()
       try {
         await trx.query('BEGIN')
-        const storeEvents: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
-          stream,
-          event,
-          aggregateId,
-          version: version + i,
-          position: 0,
-          timestamp: new Date(Date.now()),
-        }))
 
-        const toInsert = storeEvents.map((storeEvent) => [
+        const toInsert = newEvents.map((storeEvent) => [
           storeEvent.stream,
           storeEvent.aggregateId,
           JSON.stringify(storeEvent.event),
@@ -129,13 +123,13 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           ) returning position`,
             insert
           )
-          storeEvents[index].position = Number(result.rows[0].position)
+          newEvents[index].position = Number(result.rows[0].position)
           index++
         }
 
         await trx.query('COMMIT')
 
-        return storeEvents
+        return newEvents
       } catch (ex: any) {
         await trx.query('ROLLBACK')
         // TODO: Verify version conflict error

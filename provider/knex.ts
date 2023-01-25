@@ -1,7 +1,7 @@
 import { Knex as knex } from 'knex'
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
-import { toArray } from './util'
+import { createEventsMapper, toArray } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -87,18 +87,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return events.map(mapToEvent)
     },
-    append: async (stream, aggregateId, version, newEvents) => {
+    createEvents: createEventsMapper<E>(0),
+    append: async (_stream, _aggregateId, _version, newEvents) => {
       try {
-        const storeEvents: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
-          stream,
-          event,
-          aggregateId,
-          version: version + i,
-          position: 0,
-          timestamp: new Date(Date.now()),
-        }))
-
-        const toInsert = storeEvents.map((storeEvent) => ({
+        const toInsert = newEvents.map((storeEvent) => ({
           stream: storeEvent.stream,
           aggregate_id: storeEvent.aggregateId,
           event: JSON.stringify(storeEvent.event),
@@ -109,11 +101,11 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
         let index = 0
         for (const result of results) {
-          storeEvents[index].position = result
+          newEvents[index].position = result
           index++
         }
 
-        return storeEvents
+        return newEvents
       } catch (ex: any) {
         // TODO: Verify version conflict error
         throw new VersionError(ex.message)

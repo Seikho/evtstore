@@ -1,7 +1,7 @@
 import * as neo from 'neo4j-driver'
-import { ErrorCallback, Event, Provider, StoreEvent } from '../src/types'
+import { ErrorCallback, Event, Provider } from '../src/types'
 import { VersionError } from './error'
-import { toArray } from './util'
+import { createEventsMapper, toArray } from './util'
 
 export type Bookmark = {
   bookmark: string
@@ -128,18 +128,10 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
 
       return parsed
     },
-    append: async (stream, id, version, newEvents) => {
+    createEvents: createEventsMapper<E>(0),
+    append: async (stream, id, _version, newEvents) => {
       const client = await opts.client
-
-      const storeEvents: StoreEvent<E>[] = newEvents.map((event, i) => ({
-        stream,
-        event,
-        aggregateId: id,
-        version: version + i,
-        position: 0,
-        timestamp: new Date(Date.now()),
-      }))
-      for (const event of storeEvents) {
+      for (const event of newEvents) {
         try {
           await cypher(
             client,
@@ -174,7 +166,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           throw ex
         }
       }
-      return storeEvents
+      return newEvents
     },
   }
 }

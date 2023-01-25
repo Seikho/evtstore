@@ -1,6 +1,6 @@
 import { Event, Provider, StoreEvent, ErrorCallback } from '../src/types'
 import { VersionError } from './error'
-import { toArray } from './util'
+import { createEventsMapper, toArray } from './util'
 
 export function createProvider<E extends Event>(
   initEvents?: Array<StoreEvent<E>>,
@@ -41,19 +41,22 @@ export function createProvider<E extends Event>(
     return events.filter(filter)
   }
 
-  const append = async (stream: string, aggregateId: string, version: number, newEvents: E[]) => {
+  const createEvents = createEventsMapper<E>(0)
+
+  const append = async (
+    stream: string,
+    aggregateId: string,
+    version: number,
+    newEvents: StoreEvent<E>[]
+  ) => {
     const aggEvents = await getEventsFor(stream, aggregateId)
     for (const ev of aggEvents) {
       if (ev.version === version) throw new VersionError()
     }
 
-    const storeEvents: Array<StoreEvent<E>> = newEvents.map((event, i) => ({
-      stream,
-      event,
-      version: version + i,
+    const storeEvents: Array<StoreEvent<E>> = newEvents.map((event) => ({
+      ...event,
       position: ++position,
-      aggregateId,
-      timestamp: new Date(Date.now()),
     }))
 
     events.push(...storeEvents)
@@ -68,6 +71,7 @@ export function createProvider<E extends Event>(
     getEventsFor,
     getEventsFrom,
     getLastEventFor,
+    createEvents,
     append,
   }
 }
