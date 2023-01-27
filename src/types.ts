@@ -15,10 +15,6 @@ export type ProviderBookmark = {
   setPosition(position: any): Promise<void>
 }
 
-export type CommandOptions = {
-  persistAggregate?: boolean
-}
-
 export type DomainOptions<E extends Event, A extends Aggregate> = {
   aggregate: () => A
   stream: string
