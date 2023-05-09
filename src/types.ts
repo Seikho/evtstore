@@ -1,3 +1,5 @@
+import { Knex } from "knex"
+
 export type HandlerHooks = {
   preRun?: () => Promise<void>
   postRun?: (events: number, handled: number) => Promise<void>
@@ -88,7 +90,8 @@ export type Provider<Evt extends Event> = {
     stream: string,
     aggregateId: string,
     version: number,
-    event: StoreEvent<Evt>[]
+    event: StoreEvent<Evt>[],
+    trx?: Knex.Transaction
   ): Promise<Array<StoreEvent<Evt>>>
   limit?: number
 }
