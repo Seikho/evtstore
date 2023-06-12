@@ -88,7 +88,7 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
       return events.map(mapToEvent)
     },
     createEvents: createEventsMapper<E>(0),
-    append: async (_stream, _aggregateId, _version, newEvents) => {
+    append: async (_stream, _aggregateId, _version, newEvents, trx) => {
       try {
         const toInsert = newEvents.map((storeEvent) => ({
           stream: storeEvent.stream,
@@ -97,7 +97,12 @@ export function createProvider<E extends Event>(opts: Options): Provider<E> {
           version: storeEvent.version,
           timestamp: storeEvent.timestamp,
         }))
-        const results = await opts.events().insert(toInsert, ['position'])
+        let results;
+        if (trx){
+          results = await opts.events().insert(toInsert, ['position']).transacting(trx)
+        } else {
+          results = await opts.events().insert(toInsert, ['position'])
+        }
 
         let index = 0
         for (const result of results) {

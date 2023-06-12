@@ -1,3 +1,4 @@
+import { Knex } from 'knex'
 import {
   Aggregate,
   BaseAggregate,
@@ -11,7 +12,8 @@ import {
 
 export function createCommands<E extends Event, A extends Aggregate, C extends Command>(
   provided: ProvidedAggregate<E, A>,
-  handler: CommandHandler<E, A, C>
+  handler: CommandHandler<E, A, C>,
+  trx?: Knex.Transaction
 ) {
   const commands = Object.keys(handler) as Array<C['type']>
   const wrapped: CmdBody<C, A & BaseAggregate> = {} as any
@@ -21,12 +23,12 @@ export function createCommands<E extends Event, A extends Aggregate, C extends C
       const agg = await provided.getAggregate(id)
 
       const cmdResult = await handler[command]({ ...body, aggregateId: id, type: command }, agg)
-      const nextAggregate = await handleCommandResult(cmdResult, agg)
+      const nextAggregate = await handleCommandResult(cmdResult, agg, trx)
       return nextAggregate
     }
   }
 
-  async function handleCommandResult(cmdResult: E | E[] | void, aggregate: A & BaseAggregate) {
+  async function handleCommandResult(cmdResult: E | E[] | void, aggregate: A & BaseAggregate, trx?: Knex.Transaction) {
     const id = aggregate.aggregateId
     let nextAggregate = { ...aggregate }
 
@@ -42,7 +44,7 @@ export function createCommands<E extends Event, A extends Aggregate, C extends C
       )
       const nextAggregate = newEvents.reduce(provided.toNextAggregate, aggregate)
 
-      await provider.append(provided.stream, id, nextVersion, newEvents)
+      await provider.append(provided.stream, id, nextVersion, newEvents, trx)
       return nextAggregate
     }
 
